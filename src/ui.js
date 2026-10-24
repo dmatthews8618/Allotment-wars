@@ -343,9 +343,9 @@ function drawMini() {
     if (h >= 0 && G.heaps[h].amount > 0) col = [201, 133, 64];
     const v = G.vis[i],
       f = v === 0 ? 0 : v === 1 ? 0.5 : 1;
-    D[i * 4] = col[0] * f;
-    D[i * 4 + 1] = col[1] * f;
-    D[i * 4 + 2] = col[2] * f;
+    D[i * 4] = v === 0 ? 18 : col[0] * f;
+    D[i * 4 + 1] = v === 0 ? 31 : col[1] * f;
+    D[i * 4 + 2] = v === 0 ? 26 : col[2] * f;
     D[i * 4 + 3] = 255;
   }
   for (const e of G.ents) {

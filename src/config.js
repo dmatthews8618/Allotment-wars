@@ -3,7 +3,7 @@
 
 const $ = s => document.querySelector(s);
 const T = 32,
-  MW = 64,
+  MW = 96,
   MH = 48,
   WW = MW * T,
   WH = MH * T,

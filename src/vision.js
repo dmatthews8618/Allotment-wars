@@ -22,9 +22,11 @@ function updVis() {
   if (G.headless) return;
   const D = G.fogImg.data;
   for (let i = 0; i < v.length; i++) {
-    D[i * 4] = 12;
-    D[i * 4 + 1] = 9;
-    D[i * 4 + 2] = 7;
+    // Opaque, quiet green fog; a coordinate-only grain never reveals hidden terrain.
+    const grain = (i * 17 + (i % MW) * 7) % 5;
+    D[i * 4] = 17 + grain;
+    D[i * 4 + 1] = 30 + grain;
+    D[i * 4 + 2] = 26 + grain;
     D[i * 4 + 3] = v[i] === 0 ? 255 : v[i] === 1 ? 140 : 0;
   }
   G.fogCtx.putImageData(G.fogImg, 0, 0);

@@ -18,6 +18,10 @@
     <div id="app">
       <div id="game">
         <div id="stage">
+          <div class="field-label" aria-hidden="true">
+            <span class="field-dot"></span> THE ALLOTMENTS
+            <span>Defend your plot. Flatten their buildings.</span>
+          </div>
           <div id="msg" class="msg" role="status" aria-live="polite"></div>
           <div class="hud-top">
             <div id="hud-res"></div>
@@ -48,23 +52,39 @@
           </div>
           <div id="tray-slot"></div>
         </div>
-        <div id="brief" class="screen">
+        <div id="brief" class="screen" aria-labelledby="game-title">
+          <canvas id="title-art" aria-hidden="true"></canvas>
+          <div class="title-caption" aria-hidden="true">
+            A little patch of earth.<br />A very big disagreement.
+          </div>
           <div class="card">
-            <div class="kicker">Plot Holders v Tidy Lawns Society</div>
-            <h1>Allotment Wars</h1>
+            <div class="kicker">
+              <span class="edition-mark">AW</span> A very British battle for the garden
+            </div>
+            <h1 id="game-title">
+              Allotment<span>Wars<span class="title-period">.</span></span>
+            </h1>
+            <div class="title-rule">
+              <span>Plot Holders</span><i>versus</i><span>Tidy Lawns Society</span>
+            </div>
             <p>
               The Tidy Lawns Society wants the allotments flattened into a bowling green. Haul compost, plant
-              a base and send the volunteers in. Flatten their Clubhouse before they flatten your shed.
+              a base and send the volunteers in. Defend your shed. Flatten every one of their buildings.
             </p>
+            <div class="choose-label">Choose your battle <span>and dig in →</span></div>
             <div class="diffs">
               <button class="diff" type="button" data-diff="gentle">
-                Gentle<span>Small, slow attacks. Good for learning.</span>
+                <i class="diff-number">01 / EASY GOING</i>Gentle<span
+                  >Small, slow attacks. Good for learning.</span
+                >
               </button>
               <button class="diff" type="button" data-diff="standard">
-                Standard<span>A fair fight over the compost.</span>
+                <i class="diff-number">02 / A PROPER SCRAP</i>Standard<span
+                  >A fair fight over the compost.</span
+                >
               </button>
               <button class="diff" type="button" data-diff="ruthless">
-                Ruthless<span>The committee means business.</span>
+                <i class="diff-number">03 / NO MERCY</i>Ruthless<span>The committee means business.</span>
               </button>
             </div>
             <div class="mini-keys phone-tip">
@@ -72,15 +92,21 @@
               <b>Box</b> grabs a group, <b>All</b> selects every troop, double-tap a unit to grab all of that
               kind. Turn the phone sideways for more battlefield.
             </div>
-            <div class="mini-keys desk">
+            <details class="mini-keys desk">
+              <summary>New to the allotment? Your first three steps</summary>
+              <div class="first-steps">
+                <span><b>01</b> Water Butt</span><span><b>02</b> Compost Bin</span
+                ><span><b>03</b> Potting Shed</span>
+              </div>
               <b>Start:</b> plant a Water Butt, then a Compost Bin (it comes with a wheelbarrow), then a
               Potting Shed. <b>Left click</b> selects and gives orders, <b>drag</b> to box-select,
               <b>right click</b> cancels. Fences go in with two clicks: start, then end.
-            </div>
+            </details>
           </div>
         </div>
-        <div id="over" class="screen" hidden>
+        <div id="over" class="screen" role="dialog" aria-modal="true" aria-labelledby="over-title" hidden>
           <div class="card">
+            <div class="result-seal" id="result-seal" aria-hidden="true"></div>
             <div class="kicker" id="over-kicker">Result</div>
             <h1 id="over-title">The plot is yours</h1>
             <p id="over-text"></p>
@@ -96,12 +122,28 @@
             </div>
           </div>
         </div>
-        <div id="paused" class="screen paused" hidden><div>Paused</div></div>
+        <div
+          id="paused"
+          class="screen paused"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-title"
+          hidden
+        >
+          <div class="pause-card">
+            <span class="kicker">Tools down. Kettle on.</span>
+            <h1 id="pause-title">Tea break</h1>
+            <p>Your allotment can wait a moment.</p>
+            <button class="btn" id="resume" type="button">
+              Back to the garden <span aria-hidden="true">→</span></button
+            ><small>Press P or tap to resume</small>
+          </div>
+        </div>
       </div>
       <aside id="side">
         <header class="brand">
           <h1>Allotment Wars</h1>
-          <p>Plot Holders v Tidy Lawns</p>
+          <p><span class="field-dot"></span> Plot Holders command post</p>
         </header>
         <div id="slot-res">
           <section class="res">
@@ -113,7 +155,10 @@
             </div>
           </section>
         </div>
-        <div id="slot-mini"><canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas></div>
+        <div id="slot-mini">
+          <div class="map-label"><span>Field map</span><span>N ↑</span></div>
+          <canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas>
+        </div>
         <section>
           <h2>Build</h2>
           <div id="slot-build"><div id="build" class="packets"></div></div>
@@ -164,7 +209,6 @@
         </details>
       </aside>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
     <script src="src/config.js"></script>
     <script src="src/map.js"></script>
@@ -181,6 +225,7 @@
     <script src="src/input.js"></script>
     <script src="src/ambience.js"></script>
     <script src="src/scene.js"></script>
+    <script src="src/presentation.js"></script>
     <script src="src/main.js"></script>
   </body>
 </html>

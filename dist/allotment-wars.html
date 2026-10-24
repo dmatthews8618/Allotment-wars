@@ -1,7 +1,12 @@
 <title>Allotment Wars</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="claude:viewport-fit-sides" content="cover" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap"
+    />
 <style>
 /* Layout: the battlefield fills the left; a dark potting-bench sidebar on the right holds seed-packet build buttons. On phones the sidebar becomes a HUD over a full-screen battlefield. Single deliberate dark look. */
 :root {
@@ -28,6 +33,7 @@ body {
   height: 100%;
 }
 body {
+  margin: 0;
   background: var(--soil);
   color: var(--straw);
   font-family: var(--ui);
@@ -872,11 +878,803 @@ body.compact .msg {
     transition: none;
   }
 }
+
+/* Garden journal finish: warm paper, patinated green and brass. */
+:root {
+  --soil: #101c18;
+  --bench: #1b2b24;
+  --bench-edge: #35463a;
+  --muted: #b1b49a;
+  --straw: #ede6ce;
+  --gold: #edc878;
+  --display: Georgia, 'Times New Roman', serif;
+}
+body {
+  background: radial-gradient(ellipse at top right, #2a392c, #101b17 70%);
+}
+#app {
+  gap: 16px;
+  padding-block: 14px;
+}
+#game {
+  border-color: #4a5440;
+  border-radius: 12px;
+  box-shadow: 0 12px 45px #0005;
+}
+#side {
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #617050 transparent;
+  padding: 4px 4px 12px 0;
+}
+.brand {
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--bench-edge);
+}
+.brand h1 {
+  font-size: 29px;
+}
+.brand p {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  margin-top: 9px;
+}
+.field-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b0cb7c;
+  box-shadow: 0 0 9px #b0cb7c55;
+  margin-right: 6px;
+}
+h2,
+.map-label {
+  color: #c7c5a7;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+h2::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--bench-edge);
+}
+.map-label {
+  display: flex;
+  justify-content: space-between;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.stat {
+  background: linear-gradient(135deg, #29382a, #1b2b24);
+  border-radius: 8px;
+  border-color: #46513b;
+  padding: 10px;
+  box-shadow: inset 0 1px #ffffff08;
+}
+.stat:first-child {
+  border-top: 2px solid #cfac68;
+}
+.stat:nth-child(2) {
+  border-top: 2px solid #76b6cb;
+}
+#money {
+  color: #f3d494;
+  font-size: 28px;
+}
+.lbl {
+  font-size: 10px;
+}
+#mini {
+  border: 1px solid #697353;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 3px #0c1916,
+    0 6px 16px #0003;
+}
+.packet {
+  background: linear-gradient(145deg, #f4ebd2, #dcd1ae);
+  border-radius: 3px 3px 9px 9px;
+  padding-block: 10px;
+  gap: 7px;
+  font-size: 14px;
+  box-shadow:
+    0 3px 0 #090e0a66,
+    inset 0 0 0 1px #fff4;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    filter 0.15s;
+}
+.packet img {
+  filter: drop-shadow(0 2px 1px #30271a33);
+}
+.packet:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 12px #0005,
+    inset 0 0 0 1px #fff8;
+}
+.packet:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.packet:disabled {
+  opacity: 0.48;
+  filter: saturate(0.45);
+}
+.packet .fill {
+  background: linear-gradient(to top, #5a883966, #92b66b33);
+  border-top: 1px solid #54773788;
+}
+.packet .cost {
+  font-size: 12px;
+}
+.packet .badge {
+  background: #294c36;
+  box-shadow: 0 1px 4px #0003;
+}
+.info {
+  background: linear-gradient(140deg, #293b2d, #1a2a23);
+  padding: 12px;
+  border-radius: 8px;
+}
+.info p {
+  line-height: 1.45;
+}
+.field-label {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  z-index: 3;
+  border: 1px solid #b4bd8d33;
+  background: #101e18d9;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 10px;
+  letter-spacing: 0.17em;
+  pointer-events: none;
+  color: #e5d8b1;
+}
+.field-label > span:last-child {
+  display: block;
+  color: #aeb99d;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.msg {
+  top: auto;
+  bottom: 22px;
+  border-color: #66774b;
+  background: #15271af2;
+  border-radius: 8px;
+  padding: 10px 18px;
+  box-shadow: 0 6px 20px #0004;
+  letter-spacing: 0.01em;
+}
+.screen {
+  background: radial-gradient(ellipse at 60% 0, #314534ed, #101d19f5 80%);
+  padding: clamp(20px, 4vw, 64px);
+}
+.screen .card {
+  position: relative;
+  z-index: 1;
+}
+body.menu-open #app,
+body.result-open #app {
+  grid-template-columns: minmax(0, 1fr);
+}
+body.menu-open #side,
+body.menu-open #panel,
+body.menu-open .hud-top,
+body.menu-open .hud-mini,
+body.menu-open .field-label,
+body.result-open #side,
+body.result-open #panel,
+body.result-open .hud-top,
+body.result-open .hud-mini,
+body.result-open .field-label {
+  display: none;
+}
+#brief {
+  isolation: isolate;
+  place-items: center start;
+  padding-left: clamp(28px, 7vw, 120px);
+  background: #17352c;
+}
+#title-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -3;
+  pointer-events: none;
+}
+#brief::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(90deg, #10251cf7 0%, #10251cee 27%, #10251cb8 44%, #10251c15 70%),
+    linear-gradient(0deg, #0c211ba6, transparent 25%);
+  pointer-events: none;
+}
+#brief::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  z-index: -1;
+  border: 1px solid #f2dd9c26;
+  border-radius: 5px;
+  pointer-events: none;
+}
+#brief .card {
+  max-width: 590px;
+  gap: 22px;
+  padding-block: 24px;
+}
+.card .kicker {
+  color: #c9d69d;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.edition-mark {
+  border: 1px solid #cbd39b77;
+  padding: 9px 6px;
+  border-radius: 50%;
+  letter-spacing: -0.06em;
+  font-family: Georgia, serif;
+  font-size: 12px;
+}
+#game-title {
+  font-size: clamp(64px, 7.3vw, 112px);
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  text-shadow: 0 4px 0 #102a1f55;
+  color: #f6edcd;
+  font-weight: 900;
+}
+#game-title > span {
+  display: block;
+  color: #edc878;
+  font-size: 1.22em;
+}
+.title-period {
+  color: #ca8060;
+}
+.title-rule {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #ded8bc;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.title-rule i {
+  font-family: Georgia, serif;
+  font-size: 15px;
+  text-transform: none;
+  color: #a9b595;
+  letter-spacing: 0;
+}
+#brief .card > p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #c7cdb4;
+  max-width: 49ch;
+}
+.choose-label {
+  display: flex;
+  justify-content: space-between;
+  color: #ebe0c0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: -10px;
+}
+.choose-label span {
+  color: #a0b08e;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+.diff {
+  gap: 9px;
+  border: 1px solid #e3d5a7;
+  padding: 17px 13px;
+  border-radius: 3px 3px 10px 10px;
+  background: linear-gradient(135deg, #f2e9ce, #dfd4b2);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+  position: relative;
+}
+.diff-number {
+  font: 600 8px/1.2 var(--ui);
+  letter-spacing: 0.09em;
+  color: #6b714b;
+}
+.diff[data-diff='standard'] {
+  border-top: 3px solid #99b36d;
+  padding-top: 15px;
+}
+.diff[data-diff='ruthless'] {
+  border-top: 3px solid #bf7856;
+  padding-top: 15px;
+}
+.diff span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.diff:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px #0005;
+}
+.diff:active {
+  transform: translateY(1px);
+}
+.mini-keys {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mini-keys summary {
+  cursor: pointer;
+  color: #bdc9a9;
+  padding: 7px 0;
+}
+.first-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-block: 10px;
+}
+.first-steps b {
+  color: #e7c978;
+  margin-right: 4px;
+}
+.title-caption {
+  position: absolute;
+  right: 4%;
+  bottom: 8%;
+  font:
+    italic 25px/1.4 Georgia,
+    serif;
+  color: #f3e5bb;
+  text-align: right;
+  text-shadow: 0 2px 10px #102b1b;
+}
+#over {
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+#over .card {
+  align-items: center;
+  gap: 22px;
+  max-width: 640px;
+}
+#over .kicker {
+  justify-content: center;
+}
+#over .card h1 {
+  font-size: clamp(44px, 6vw, 76px);
+  line-height: 1.05;
+}
+#over .card p {
+  color: #c9ceba;
+  font-size: 17px;
+  line-height: 1.6;
+}
+#over .stats {
+  width: 100%;
+  margin-block: 4px;
+}
+.stats div {
+  padding: 18px 8px;
+  border-radius: 8px;
+  background: #23372bd9;
+  border-color: #67724c66;
+}
+.stats b {
+  color: #f1ddb1;
+  font:
+    32px/1.2 Georgia,
+    serif;
+}
+.stats span {
+  display: block;
+  margin-top: 7px;
+  font-size: 10px;
+}
+.result-seal {
+  width: 112px;
+  height: 112px;
+  color: #e3c879;
+}
+.result-seal svg {
+  width: 100%;
+  height: 100%;
+}
+#over[data-result='defeat'] {
+  background: radial-gradient(ellipse at 50% 0, #503e34ed, #18231ff5 80%);
+}
+#over[data-result='defeat'] h1,
+#over[data-result='defeat'] .result-seal {
+  color: #dca68a;
+}
+#over[data-result='defeat'] .kicker {
+  color: #ceb6a3;
+}
+.btn {
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 6px;
+  background: #e6d29e;
+  box-shadow: 0 3px 0 #0003;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.btn:hover {
+  background: #f5e7c3;
+  transform: translateY(-1px);
+}
+.btn.ghost {
+  border-color: #7d896066;
+  box-shadow: none;
+}
+.btn.ghost:hover {
+  background: #ffffff0a;
+}
+.paused {
+  backdrop-filter: blur(5px);
+  background: #0f201bbd;
+}
+.paused .pause-card {
+  font-family: var(--ui);
+  text-align: center;
+  color: var(--straw);
+  background: #1b3028;
+  border: 1px solid #8d936055;
+  border-radius: 14px;
+  padding: 38px 42px;
+  box-shadow: 0 25px 80px #0006;
+}
+.pause-card .kicker {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c9d69d;
+}
+.pause-card h1 {
+  font-family: var(--display);
+  font-size: 52px;
+  color: var(--gold);
+  margin: 18px 0 12px;
+}
+.pause-card p {
+  font-size: 15px;
+  color: #c1c8af;
+  margin: 0 0 26px;
+}
+.pause-card small {
+  display: block;
+  font-size: 11px;
+  color: #9fae91;
+  margin-top: 18px;
+}
+body.compact .field-label {
+  display: none;
+}
+body.compact #app {
+  padding-block: 8px;
+}
+body.compact #panel {
+  background: linear-gradient(140deg, #283a2d, #17271f);
+  border-color: #66704b;
+}
+body.compact .stat {
+  border-top-width: 1px;
+  border-radius: 6px;
+}
+body.compact #brief {
+  padding: 28px;
+}
+body.compact #brief .card {
+  max-width: 560px;
+  gap: 15px;
+}
+body.compact #game-title {
+  font-size: 67px;
+}
+body.compact .title-caption {
+  display: none;
+}
+body.compact #brief::before {
+  background: linear-gradient(90deg, #10251cee, #10251ca6), linear-gradient(0deg, #10251cdd, transparent);
+}
+body.compact .cmd,
+body.compact .tab {
+  border-color: #586349;
+}
+body.compact .tab.on {
+  background: #daca9f;
+  color: #283624;
+  border-color: #daca9f;
+}
+body.compact .cmd.on {
+  background: #c6db9b;
+}
+@media (max-width: 760px) {
+  #brief .diffs {
+    gap: 8px;
+  }
+  #brief .diff {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 12px;
+    border-top-width: 1px;
+    border-left: 3px solid #99b36d;
+    font-size: 19px;
+  }
+  #brief .diff[data-diff='ruthless'] {
+    border-left-color: #bf7856;
+  }
+  #brief .diff-number {
+    grid-column: 1 / -1;
+  }
+  #brief .card > p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  #brief .title-rule {
+    font-size: 8px;
+    gap: 8px;
+    letter-spacing: 0.06em;
+  }
+  #brief .card .kicker {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+  #brief .edition-mark {
+    display: none;
+  }
+  body.compact #game-title {
+    font-size: clamp(46px, 15vw, 72px);
+  }
+  .choose-label {
+    font-size: 9px;
+  }
+  #over {
+    padding: 24px;
+  }
+  #over .card {
+    gap: 16px;
+  }
+  .result-seal {
+    width: 86px;
+    height: 86px;
+  }
+  #over .card p {
+    font-size: 14px;
+  }
+  .stats div {
+    padding: 12px 8px;
+  }
+  .stats b {
+    font-size: 26px;
+  }
+}
+@media (max-height: 600px) {
+  .screen {
+    place-items: start center;
+  }
+  #brief {
+    place-items: start;
+  }
+  body.compact #brief .card {
+    padding-block: 8px;
+    max-width: 600px;
+    gap: 12px;
+  }
+  body.compact #game-title {
+    font-size: 50px;
+  }
+  #brief .card > p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  #brief .diff {
+    padding: 10px;
+    font-size: 17px;
+    gap: 5px;
+  }
+  .result-seal {
+    width: 68px;
+    height: 68px;
+  }
+  #over .card {
+    gap: 12px;
+  }
+  #over .card h1 {
+    font-size: 40px;
+  }
+  .stats div {
+    padding: 10px;
+  }
+  .paused {
+    place-items: center;
+  }
+  .paused .pause-card {
+    padding: 22px 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes card-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #over:not([hidden]) .card,
+  #paused:not([hidden]) .pause-card {
+    animation: card-arrive 0.35s ease-out both;
+  }
+}
+/* Short landscape screens get a two-column briefing with every difficulty in view. */
+@media (max-height: 540px) and (min-width: 600px) and (orientation: landscape) {
+  body.compact #brief {
+    padding: 20px 24px;
+  }
+  body.compact #brief .card {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    max-width: 100%;
+    gap: 10px 30px;
+    padding: 0;
+    align-content: start;
+  }
+  #brief .card > .kicker {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 8px;
+  }
+  #brief .edition-mark {
+    display: none;
+  }
+  body.compact #game-title {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 45px;
+  }
+  #brief .title-rule {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 8px;
+    gap: 8px;
+  }
+  #brief .card > p {
+    grid-column: 1;
+    grid-row: 4;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  #brief .choose-label {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-size: 9px;
+  }
+  #brief .choose-label span {
+    display: none;
+  }
+  #brief .diffs {
+    grid-column: 2;
+    grid-row: 2 / 5;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  #brief .diff {
+    display: flex;
+    padding: 9px 12px;
+    font-size: 18px;
+    gap: 4px;
+    border-top-width: 1px;
+    border-left: 3px solid #99b36d;
+  }
+  #brief .diff[data-diff='ruthless'] {
+    border-left-color: #bf7856;
+  }
+  #brief .diff span {
+    font-size: 11px;
+  }
+  #brief .phone-tip {
+    grid-column: 1 / -1;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+}
+@media (max-height: 540px) {
+  #over {
+    padding: 16px 24px;
+  }
+  #over .card {
+    gap: 8px;
+  }
+  #over .result-seal {
+    width: 44px;
+    height: 44px;
+  }
+  #over .card h1 {
+    font-size: 34px;
+  }
+  #over .card p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  #over .stats {
+    margin: 0;
+  }
+  #over .stats div {
+    padding: 8px;
+  }
+  #over .stats b {
+    font-size: 24px;
+  }
+  #over .stats span {
+    font-size: 9px;
+    margin-top: 3px;
+  }
+}
+@media (min-width: 761px) and (min-height: 541px) {
+  #slot-mini {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .map-label {
+    width: 100%;
+  }
+  #slot-mini #mini {
+    width: min(100%, 200px);
+  }
+}
 </style>
 
 <div id="app">
       <div id="game">
         <div id="stage">
+          <div class="field-label" aria-hidden="true">
+            <span class="field-dot"></span> THE ALLOTMENTS
+            <span>Defend your plot. Flatten their buildings.</span>
+          </div>
           <div id="msg" class="msg" role="status" aria-live="polite"></div>
           <div class="hud-top">
             <div id="hud-res"></div>
@@ -907,23 +1705,39 @@ body.compact .msg {
           </div>
           <div id="tray-slot"></div>
         </div>
-        <div id="brief" class="screen">
+        <div id="brief" class="screen" aria-labelledby="game-title">
+          <canvas id="title-art" aria-hidden="true"></canvas>
+          <div class="title-caption" aria-hidden="true">
+            A little patch of earth.<br />A very big disagreement.
+          </div>
           <div class="card">
-            <div class="kicker">Plot Holders v Tidy Lawns Society</div>
-            <h1>Allotment Wars</h1>
+            <div class="kicker">
+              <span class="edition-mark">AW</span> A very British battle for the garden
+            </div>
+            <h1 id="game-title">
+              Allotment<span>Wars<span class="title-period">.</span></span>
+            </h1>
+            <div class="title-rule">
+              <span>Plot Holders</span><i>versus</i><span>Tidy Lawns Society</span>
+            </div>
             <p>
               The Tidy Lawns Society wants the allotments flattened into a bowling green. Haul compost, plant
-              a base and send the volunteers in. Flatten their Clubhouse before they flatten your shed.
+              a base and send the volunteers in. Defend your shed. Flatten every one of their buildings.
             </p>
+            <div class="choose-label">Choose your battle <span>and dig in →</span></div>
             <div class="diffs">
               <button class="diff" type="button" data-diff="gentle">
-                Gentle<span>Small, slow attacks. Good for learning.</span>
+                <i class="diff-number">01 / EASY GOING</i>Gentle<span
+                  >Small, slow attacks. Good for learning.</span
+                >
               </button>
               <button class="diff" type="button" data-diff="standard">
-                Standard<span>A fair fight over the compost.</span>
+                <i class="diff-number">02 / A PROPER SCRAP</i>Standard<span
+                  >A fair fight over the compost.</span
+                >
               </button>
               <button class="diff" type="button" data-diff="ruthless">
-                Ruthless<span>The committee means business.</span>
+                <i class="diff-number">03 / NO MERCY</i>Ruthless<span>The committee means business.</span>
               </button>
             </div>
             <div class="mini-keys phone-tip">
@@ -931,15 +1745,21 @@ body.compact .msg {
               <b>Box</b> grabs a group, <b>All</b> selects every troop, double-tap a unit to grab all of that
               kind. Turn the phone sideways for more battlefield.
             </div>
-            <div class="mini-keys desk">
+            <details class="mini-keys desk">
+              <summary>New to the allotment? Your first three steps</summary>
+              <div class="first-steps">
+                <span><b>01</b> Water Butt</span><span><b>02</b> Compost Bin</span
+                ><span><b>03</b> Potting Shed</span>
+              </div>
               <b>Start:</b> plant a Water Butt, then a Compost Bin (it comes with a wheelbarrow), then a
               Potting Shed. <b>Left click</b> selects and gives orders, <b>drag</b> to box-select,
               <b>right click</b> cancels. Fences go in with two clicks: start, then end.
-            </div>
+            </details>
           </div>
         </div>
-        <div id="over" class="screen" hidden>
+        <div id="over" class="screen" role="dialog" aria-modal="true" aria-labelledby="over-title" hidden>
           <div class="card">
+            <div class="result-seal" id="result-seal" aria-hidden="true"></div>
             <div class="kicker" id="over-kicker">Result</div>
             <h1 id="over-title">The plot is yours</h1>
             <p id="over-text"></p>
@@ -955,12 +1775,28 @@ body.compact .msg {
             </div>
           </div>
         </div>
-        <div id="paused" class="screen paused" hidden><div>Paused</div></div>
+        <div
+          id="paused"
+          class="screen paused"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-title"
+          hidden
+        >
+          <div class="pause-card">
+            <span class="kicker">Tools down. Kettle on.</span>
+            <h1 id="pause-title">Tea break</h1>
+            <p>Your allotment can wait a moment.</p>
+            <button class="btn" id="resume" type="button">
+              Back to the garden <span aria-hidden="true">→</span></button
+            ><small>Press P or tap to resume</small>
+          </div>
+        </div>
       </div>
       <aside id="side">
         <header class="brand">
           <h1>Allotment Wars</h1>
-          <p>Plot Holders v Tidy Lawns</p>
+          <p><span class="field-dot"></span> Plot Holders command post</p>
         </header>
         <div id="slot-res">
           <section class="res">
@@ -972,7 +1808,10 @@ body.compact .msg {
             </div>
           </section>
         </div>
-        <div id="slot-mini"><canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas></div>
+        <div id="slot-mini">
+          <div class="map-label"><span>Field map</span><span>N ↑</span></div>
+          <canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas>
+        </div>
         <section>
           <h2>Build</h2>
           <div id="slot-build"><div id="build" class="packets"></div></div>
@@ -1033,7 +1872,7 @@ body.compact .msg {
 
 const $ = s => document.querySelector(s);
 const T = 32,
-  MW = 64,
+  MW = 96,
   MH = 48,
   WW = MW * T,
   WH = MH * T,
@@ -1413,12 +2252,12 @@ function tryMap(seed) {
     terr[idx(MW - 1 - x, MH - 1 - y)] = v;
   };
   const g = () => (R() + R() + R() - 1.5) / 1.5;
-  const nearBase = (x, y, d) => Math.hypot(x - 10, y - 38) < d || Math.hypot(x - 53, y - 9) < d;
+  const nearBase = (x, y, d) => Math.hypot(x - 10, y - 38) < d || Math.hypot(x - (MW - 11), y - 9) < d;
   let placed = 0,
     tries = 0;
-  const nP = 3 + ((R() * 2) | 0);
+  const nP = Math.round((3 + ((R() * 2) | 0)) * MW / 64);
   while (placed < nP && tries++ < 60) {
-    const cx = 16 + R() * 32,
+    const cx = 16 + R() * (MW - 32),
       cy = 6 + R() * 36;
     if (nearBase(cx, cy, 15)) continue;
     const r = 1.8 + R() * 2;
@@ -1428,9 +2267,9 @@ function tryMap(seed) {
       }
     placed++;
   }
-  const nH = 5 + ((R() * 3) | 0);
+  const nH = Math.round((5 + ((R() * 3) | 0)) * MW / 64);
   for (let i = 0; i < nH; i++) {
-    const hx = 12 + ((R() * 40) | 0),
+    const hx = 12 + ((R() * (MW - 24)) | 0),
       hy = 4 + ((R() * 40) | 0);
     if (nearBase(hx, hy, 13)) continue;
     const len = 4 + ((R() * 6) | 0),
@@ -1440,9 +2279,9 @@ function tryMap(seed) {
   for (let y = 26; y <= 46; y++) for (let x = 1; x <= 21; x++) set(x, y, 0);
   const P = [
     [9, 37],
-    [20 + R() * 6, 26 + R() * 6],
-    [38 + R() * 6, 16 + R() * 6],
-    [54, 10],
+    [MW * 0.32 + R() * 6, 26 + R() * 6],
+    [MW * 0.60 + R() * 6, 16 + R() * 6],
+    [MW - 10, 10],
   ];
   for (let t = 0; t <= 1; t += 0.003) {
     const u = 1 - t;
@@ -1471,7 +2310,7 @@ function tryMap(seed) {
     terr[idx(0, y)] = 3;
     terr[idx(MW - 1, y)] = 3;
   }
-  for (let y = 1; y <= 20; y++) for (let x = 42; x <= 62; x++) if (terr[idx(x, y)] === 0) terr[idx(x, y)] = 5;
+  for (let y = 1; y <= 20; y++) for (let x = MW - 22; x <= MW - 2; x++) if (terr[idx(x, y)] === 0) terr[idx(x, y)] = 5;
   const tmpl = new Uint8Array(MW * MH);
   for (const [k, x, y] of [...TEMPLATE, ...DEF_TEMPLATE]) {
     const d = BLDS[k];
@@ -1515,7 +2354,9 @@ function tryMap(seed) {
   };
   field(19, 43, 8, 500);
   field(7, 28, 7, 500);
-  field(26, 21, 9, 800);
+  field(Math.round(MW * 0.40625), 21, 9, 800);
+  // Additional mirrored expansion fields reward moving into the wider centre.
+  field(Math.round(MW * 0.47), 34, 6, 600);
   const seen = new Uint8Array(MW * MH),
     q = [idx(10, 44)];
   seen[q[0]] = 1;
@@ -1540,7 +2381,7 @@ function tryMap(seed) {
       q.push(n);
     }
   }
-  if (!seen[idx(53, 3)]) return null;
+  if (!seen[idx(MW - 11, 3)]) return null;
   for (const h of heaps) if (!seen[idx(h.tx, h.ty)]) return null;
   return { terr, heaps, heapAt };
 }
@@ -2579,7 +3420,7 @@ function drawTerrain() {
   const R = mulberry32(G.seed ^ 0x5bd1);
   const terr = G.terr;
   const at = (tx, ty) => (inb(tx, ty) ? terr[idx(tx, ty)] : 3);
-  x.fillStyle = '#4e7c34';
+  x.fillStyle = '#52783d';
   x.fillRect(0, 0, WW, WH);
   for (let i = 0; i < 1100; i++) {
     const cx = R() * WW,
@@ -2606,7 +3447,7 @@ function drawTerrain() {
       by = R() * WH;
     const t = terr[idx(tileOf(bx), tileOf(by))];
     if (t !== 0 && t !== 5) continue;
-    x.strokeStyle = R() < 0.5 ? 'rgba(170,210,115,.28)' : 'rgba(30,60,20,.22)';
+    x.strokeStyle = R() < 0.5 ? 'rgba(185,211,139,.22)' : 'rgba(30,60,28,.18)';
     x.beginPath();
     x.moveTo(bx, by);
     x.lineTo(bx + R() * 3 - 1.5, by - 3 - R() * 4);
@@ -2641,16 +3482,45 @@ function drawTerrain() {
       x.fillStyle = 'rgba(150,110,75,.25)';
       x.fillRect(px, py + 4 + r * 8, T, 1);
     }
-    for (let r = 0; r < 4; r++)
-      if (R() < 0.8)
-        for (let k = 0; k < 3; k++) {
-          const cx = px + 5 + k * 11 + R() * 2,
-            cy = py + 3 + r * 8;
-          circ(x, cx - 1.3, cy, 1.7, '#5f9a3a');
-          circ(x, cx + 1.3, cy, 1.7, '#5f9a3a');
-          circ(x, cx, cy - 1.2, 1.6, '#8cc95a');
+    // Each bed has its own crop, with planted shadows and sunlit leaves.
+    const crop = (Math.floor((i % MW) / 4) + Math.floor(i / MW / 4)) % 3;
+    for (let r = 0; r < 3; r++)
+      for (let k = 0; k < 3; k++) {
+        const cx = px + 5 + k * 11,
+          cy = py + 5 + r * 10;
+        ell(x, cx + 1, cy + 2, 4.4, 2.5, 'rgba(17,29,15,.45)');
+        if (crop === 0) {
+          ell(x, cx - 1.5, cy, 3, 2.1, '#6f9849', -0.5);
+          ell(x, cx + 1.5, cy, 3, 2.1, '#4b7939', 0.5);
+          circ(x, cx, cy - 1, 2.1, '#a2bb69');
+          line(x, cx, cy - 2, cx, cy + 1, '#cee0a0', 0.6);
+        } else if (crop === 1) {
+          circ(x, cx, cy + 1, 2.6, '#b86b30');
+          line(x, cx, cy, cx - 3, cy - 4, '#80a34b', 1.4);
+          line(x, cx, cy, cx + 2, cy - 5, '#a5bd61', 1.4);
+          line(x, cx, cy, cx + 4, cy - 2, '#5b8a3d', 1.4);
+        } else {
+          ell(x, cx, cy, 4.1, 3.3, '#728b56');
+          ell(x, cx - 1, cy - 1, 2.8, 2.2, '#a6b982');
+          circ(x, cx, cy - 1, 1.5, '#ccd3a1');
+          line(x, cx - 2, cy + 1, cx + 1, cy - 2, '#7a9961', 0.7);
         }
+      }
+    const tx = i % MW,
+      ty = (i / MW) | 0;
+    // Timber only at the perimeter: adjacent tiles still read as a single bed.
+    for (const [dx, dy, ax, ay, bx, by] of [
+      [0, -1, 0, 0, T, 0],
+      [0, 1, 0, T, T, T],
+      [-1, 0, 0, 0, 0, T],
+      [1, 0, T, 0, T, T],
+    ]) {
+      if (at(tx + dx, ty + dy) === 4) continue;
+      line(x, px + ax, py + ay + 1, px + bx, py + by + 1, '#302a1c', 4);
+      line(x, px + ax, py + ay, px + bx, py + by, '#a08b59', 2);
+    }
   }
+
   // paths: one continuous band joining neighbouring path tiles, with soft edges and gravel speckle
   const pathSegs = [];
   for (let i = 0; i < MW * MH; i++) {
@@ -2710,13 +3580,13 @@ function drawTerrain() {
   const ponds = [];
   for (let i = 0; i < MW * MH; i++) if (terr[i] === 2) ponds.push(i);
   for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2 + 2, T * 0.9, '#5c4a30');
-  for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.8, '#2a5d78');
+  for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.8, '#397b85');
   for (const i of ponds) {
     const tx = i % MW,
       ty = (i / MW) | 0;
     let deep = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (at(tx + dx, ty + dy) === 2) deep++;
-    if (deep >= 8) circ(x, tx * T + T / 2, ty * T + T / 2, T * 0.75, '#1f4c66');
+    if (deep >= 8) circ(x, tx * T + T / 2, ty * T + T / 2, T * 0.75, '#285d70');
   }
   for (const i of ponds) {
     const px = (i % MW) * T,
@@ -2770,11 +3640,24 @@ function drawTerrain() {
         px + 4 + R() * 24,
         py + 4 + R() * 24,
         1.6 + R() * 1.8,
-        a < 0.45 ? '#3d7232' : a < 0.8 ? '#18331a' : '#4f8a3e'
+        a < 0.45 ? '#4b7941' : a < 0.8 ? '#224532' : '#7a9752'
       );
     }
     if (R() < 0.12) for (let k = 0; k < 3; k++) circ(x, px + 6 + R() * 20, py + 6 + R() * 20, 1.3, '#f4f0e4');
   }
+  const foliageR = mulberry32(G.seed ^ 0x427a);
+  for (const i of hedges) {
+    const px = (i % MW) * T,
+      py = ((i / MW) | 0) * T;
+    for (let k = 0; k < 5; k++) {
+      const lx = px + 5 + foliageR() * 21,
+        ly = py + 4 + foliageR() * 20;
+      ell(x, lx, ly, 3.2, 1.8, k % 2 ? '#668b49' : '#365e35', foliageR() * 3);
+      line(x, lx - 1, ly, lx + 1, ly - 0.5, 'rgba(190,208,130,.28)', 0.6);
+    }
+  }
+  x.fillStyle = lin(x, 0, 0, WW, WH, ['rgba(247,217,138,.07)', 'rgba(34,67,54,.03)']);
+  x.fillRect(0, 0, WW, WH);
   if (S.textures.exists('terrain')) S.textures.remove('terrain');
   S.textures.addCanvas('terrain', cv);
   return cv;
@@ -3749,6 +4632,7 @@ function updProj(dt) {
 }
 function impact(p) {
   const tex = p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'splat';
+  impactAccent(p);
   if (p.splash) {
     const R = p.splash * T;
     for (const o of G.ents) {
@@ -3768,6 +4652,34 @@ function impact(p) {
     }
     fx(p.tx, p.ty, tex, 0.45, 0.3);
   }
+}
+// One short-lived drawing per impact: directional droplets, pumpkin fragments or bee sparks.
+// Uses fixed angles so visual detail cannot perturb the simulation's random sequence.
+function impactAccent(p) {
+  if (G.headless || !visibleToPlayerPt(p.tx, p.ty)) return;
+  const water = p.kind === 'drop',
+    bees = p.kind === 'bees';
+  const col = water ? 0xc3ecf0 : bees ? 0xeed481 : p.kind === 'pumpkin' ? 0xe9a04d : 0xc0a074;
+  const g = S.add.graphics().setPosition(p.tx, p.ty).setDepth(4.55);
+  const radius = p.splash ? 18 : 9;
+  g.lineStyle(1.2, col, 0.65);
+  g.strokeEllipse(0, 0, radius * 1.8, radius);
+  g.fillStyle(col, 0.85);
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3 + p.tx * 0.03;
+    const x = Math.cos(a) * radius,
+      y = Math.sin(a) * radius * 0.6;
+    if (water || bees) g.fillCircle(x, y, water ? 1.5 : 1);
+    else g.fillRect(x, y, 3, 2);
+  }
+  S.tweens.add({
+    targets: g,
+    scale: 1.7,
+    alpha: 0,
+    duration: water ? 280 : 420,
+    ease: 'Cubic.Out',
+    onComplete: () => g.destroy(),
+  });
 }
 function damage(t, amt, ak, src) {
   if (t.dead) return;
@@ -4191,9 +5103,11 @@ function updVis() {
   if (G.headless) return;
   const D = G.fogImg.data;
   for (let i = 0; i < v.length; i++) {
-    D[i * 4] = 12;
-    D[i * 4 + 1] = 9;
-    D[i * 4 + 2] = 7;
+    // Opaque, quiet green fog; a coordinate-only grain never reveals hidden terrain.
+    const grain = (i * 17 + (i % MW) * 7) % 5;
+    D[i * 4] = 17 + grain;
+    D[i * 4 + 1] = 30 + grain;
+    D[i * 4 + 2] = 26 + grain;
     D[i * 4 + 3] = v[i] === 0 ? 255 : v[i] === 1 ? 140 : 0;
   }
   G.fogCtx.putImageData(G.fogImg, 0, 0);
@@ -4238,7 +5152,11 @@ function endGame(win) {
   $('#st-comp').textContent = G.stats.harvested.toLocaleString('en-GB');
   $('#st-kill').textContent = G.stats.killed;
   $('#st-lost').textContent = G.stats.lost;
+  document.body.classList.add('result-open');
+  $('#over').dataset.result = win ? 'victory' : 'defeat';
+  $('#result-seal').innerHTML = resultEmblem(win);
   $('#over').hidden = false;
+  $('#again').focus();
 }
 
 
@@ -4588,9 +5506,9 @@ function drawMini() {
     if (h >= 0 && G.heaps[h].amount > 0) col = [201, 133, 64];
     const v = G.vis[i],
       f = v === 0 ? 0 : v === 1 ? 0.5 : 1;
-    D[i * 4] = col[0] * f;
-    D[i * 4 + 1] = col[1] * f;
-    D[i * 4 + 2] = col[2] * f;
+    D[i * 4] = v === 0 ? 18 : col[0] * f;
+    D[i * 4 + 1] = v === 0 ? 31 : col[1] * f;
+    D[i * 4 + 2] = v === 0 ? 26 : col[2] * f;
     D[i * 4 + 3] = 255;
   }
   for (const e of G.ents) {
@@ -4679,9 +5597,25 @@ function marker(x, y, col) {
   if (G.headless) return;
   const g = S.add.graphics().setDepth(6);
   g.lineStyle(2, col, 1);
-  g.strokeCircle(0, 0, 10);
+  g.strokeEllipse(0, 0, 24, 15);
+  g.fillStyle(col, 0.2);
+  g.fillEllipse(0, 0, 24, 15);
+  for (const [dx, dy] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ])
+    g.lineBetween(dx * 16, dy * 11, dx * 22, dy * 17);
   g.setPosition(x, y);
-  S.tweens.add({ targets: g, scale: 0.2, alpha: 0, duration: 450, onComplete: () => g.destroy() });
+  S.tweens.add({
+    targets: g,
+    scale: 0.55,
+    alpha: 0,
+    duration: 650,
+    ease: 'Cubic.Out',
+    onComplete: () => g.destroy(),
+  });
 }
 function wallRun(sx, sy, ex, ey) {
   const out = [];
@@ -5155,6 +6089,7 @@ class Main extends Phaser.Scene {
     G.fogTex = this.textures.get('fog');
     G.fogCtx = G.fogTex.getContext();
     G.fogImg = G.fogCtx.createImageData(MW, MH);
+    G.fogTex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.add.image(0, 0, 'fog').setOrigin(0).setScale(T).setDepth(8);
     G.miniCv = document.createElement('canvas');
     G.miniCv.width = MW;
@@ -5190,7 +6125,7 @@ class Main extends Phaser.Scene {
     updVis();
     const cam = this.cameras.main;
     setCamBounds();
-    cam.setBackgroundColor('#0c0907');
+    cam.setBackgroundColor('#14221c');
     zoomTo(
       document.body.classList.contains('compact') && Math.min(this.scale.width, this.scale.height) < 420 * DPR
         ? 0.85
@@ -5494,17 +6429,29 @@ class Main extends Phaser.Scene {
     const bar = (e, w, y) => {
       const f = clamp(e.hp / e.maxHp, 0, 1);
       g.fillStyle(0x140f0b, 0.85);
-      g.fillRect(e.x - w / 2 - 1, y - 1, w + 2, 5);
+      g.fillRoundedRect(e.x - w / 2 - 2, y - 2, w + 4, 7, 2);
       g.fillStyle(f > 0.6 ? 0x7ccf4a : f > 0.3 ? 0xe8c547 : 0xe0503c, 1);
       g.fillRect(e.x - w / 2, y, w * f, 3);
+      g.fillStyle(0xffffff, 0.3);
+      g.fillRect(e.x - w / 2, y, w * f, 1);
     };
+    // Small team pips anchor troops against busy planting without covering their art.
+    for (const e of G.ents) {
+      if (e.dead || !e.unit || !e.spr.visible || G.sel.includes(e)) continue;
+      sg.fillStyle(0x10251b, 0.7);
+      sg.fillEllipse(e.x, e.y + e.d.r + 3, 9, 4);
+      sg.fillStyle(TEAM[e.team].sel, 0.9);
+      sg.fillEllipse(e.x, e.y + e.d.r + 3, 6, 2);
+    }
     for (const e of G.sel) {
       if (e.dead) continue;
       const col = TEAM[e.team].sel;
       if (e.unit) {
         // a disc on the ground under the unit, so a crowd stays readable
-        sg.fillStyle(col, 0.28);
+        sg.fillStyle(col, 0.16);
         sg.fillEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
+        sg.lineStyle(3.5, 0x10251b, 0.65);
+        sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 8, e.d.r * 1.3 + 7);
         sg.lineStyle(1.5, col, 0.95);
         sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
         if (e.hp < e.maxHp) bar(e, 20, e.y - e.d.r - 9);
@@ -5673,6 +6620,282 @@ function tick(dt) {
 }
 
 
+/* ===== src/presentation.js ===== */
+// Menu illustration and screen presentation. Purely visual; never consumes match randomness.
+'use strict';
+
+function drawTitleArt() {
+  const cv = $('#title-art');
+  const rect = cv.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const density = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(rect.width * density);
+  cv.height = Math.round(rect.height * density);
+  const c = cv.getContext('2d');
+  const scale = Math.max(rect.width / 1440, rect.height / 1000);
+  c.scale(density * scale, density * scale);
+  c.translate((rect.width / scale - 1440) / 2, (rect.height / scale - 1000) / 2);
+  const R = mulberry32(70823);
+  c.fillStyle = lin(c, 0, 0, 0, 1000, ['#163e43', '#659583', '#f1cf86']);
+  c.fillRect(0, 0, 1440, 1000);
+  c.fillStyle = rad(c, 1130, 250, 360, ['rgba(255,226,154,.5)', 'rgba(255,226,154,0)']);
+  c.fillRect(740, 0, 700, 650);
+  circ(c, 1130, 250, 56, '#f9e4ad');
+  for (let i = 0; i < 8; i++) {
+    const x = 450 + R() * 1050,
+      y = 110 + R() * 240;
+    ell(c, x, y, 60 + R() * 70, 8 + R() * 10, 'rgba(245,238,203,.12)');
+  }
+  const hill = (y, col, bend) => {
+    c.beginPath();
+    c.moveTo(0, y);
+    c.bezierCurveTo(420, y - bend, 760, y + bend, 1440, y - 30);
+    c.lineTo(1440, 1000);
+    c.lineTo(0, 1000);
+    c.closePath();
+    c.fillStyle = col;
+    c.fill();
+  };
+  hill(440, '#48746a', 110);
+  hill(500, '#315d4b', 80);
+  hill(570, '#264c38', 100);
+  // Distant village and the rival society's impeccably tidy pavilion.
+  for (let i = 0; i < 8; i++) {
+    const x = 820 + i * 77,
+      y = 455 + Math.sin(i) * 15;
+    c.fillStyle = '#597468';
+    c.fillRect(x, y - 34, 46, 39);
+    c.beginPath();
+    c.moveTo(x - 5, y - 34);
+    c.lineTo(x + 23, y - 57);
+    c.lineTo(x + 51, y - 34);
+    c.fillStyle = '#344c49';
+    c.fill();
+    c.fillStyle = '#a5aa84';
+    c.fillRect(x + 17, y - 22, 9, 12);
+  }
+  c.fillStyle = lin(c, 0, 540, 0, 1000, ['#59733c', '#263f2d']);
+  c.beginPath();
+  c.moveTo(0, 620);
+  c.quadraticCurveTo(900, 445, 1440, 580);
+  c.lineTo(1440, 1000);
+  c.lineTo(0, 1000);
+  c.fill();
+  // Winding gravel path, behind the beds and shed.
+  c.beginPath();
+  c.moveTo(965, 550);
+  c.bezierCurveTo(860, 680, 1230, 780, 1040, 1030);
+  c.strokeStyle = '#ac9460';
+  c.lineWidth = 72;
+  c.stroke();
+  c.strokeStyle = '#bca876';
+  c.lineWidth = 48;
+  c.stroke();
+  for (let i = 0; i < 700; i++) {
+    const x = 650 + R() * 800,
+      y = 555 + R() * 445;
+    line(c, x, y, x + 2, y - 3 - R() * 7, R() > 0.5 ? '#72904b' : '#314e2c', 1);
+  }
+  // Vegetable beds in perspective: timber edges, turned soil and individual crops.
+  function bed(x, y, w, h, kind) {
+    c.save();
+    c.translate(x, y);
+    c.transform(1, 0.12, -0.55, 0.6, 0, 0);
+    c.shadowColor = '#17291d';
+    c.shadowBlur = 16;
+    c.shadowOffsetY = 10;
+    c.fillStyle = '#98734a';
+    c.fillRect(0, 0, w, h);
+    c.shadowBlur = 0;
+    c.shadowOffsetY = 0;
+    c.fillStyle = '#483527';
+    c.fillRect(6, 6, w - 12, h - 12);
+    line(c, 0, 0, w, 0, '#c7a875', 3);
+    for (let yy = 24; yy < h - 10; yy += 30) {
+      line(c, 10, yy + 9, w - 10, yy + 9, '#2e271d', 3);
+      for (let xx = 23; xx < w - 12; xx += 32) {
+        if (kind === 'pumpkin') {
+          ell(c, xx + 3, yy + 5, 13, 10, '#30291e');
+          circ(c, xx, yy, 11, '#c66b2d');
+          ell(c, xx - 3, yy - 2, 5, 8, '#e89f43');
+          line(c, xx, yy - 9, xx + 2, yy - 14, '#7a963b', 3);
+        } else {
+          ell(c, xx + 3, yy + 4, 13, 8, '#292e20');
+          for (let a = 0; a < 5; a++)
+            ell(
+              c,
+              xx + Math.cos(a * 1.26) * 5,
+              yy + Math.sin(a * 1.26) * 4,
+              7,
+              4,
+              a % 2 ? '#789951' : '#4d793e',
+              a * 1.26
+            );
+          circ(c, xx - 1, yy - 2, 4, '#a1b86c');
+        }
+      }
+    }
+    c.restore();
+  }
+  bed(800, 665, 180, 116, 'greens');
+  bed(766, 795, 205, 130, 'pumpkin');
+  bed(1210, 748, 210, 120, 'greens');
+  bed(1190, 875, 240, 130, 'pumpkin');
+  // A greenhouse with translucent glazing and warm reflections.
+  c.save();
+  c.translate(1165, 500);
+  c.fillStyle = '#385b4d';
+  c.fillRect(0, 40, 180, 112);
+  c.beginPath();
+  c.moveTo(0, 40);
+  c.lineTo(45, -15);
+  c.lineTo(180, 5);
+  c.lineTo(180, 152);
+  c.lineTo(0, 152);
+  c.fillStyle = 'rgba(161,204,176,.5)';
+  c.fill();
+  for (let x = 10; x < 180; x += 30) {
+    line(c, x, 40, x, 149, '#c0cbb0', 3);
+    line(c, x, 40, x + 42, -10 + x * 0.1, '#c0cbb0', 3);
+    ell(c, x + 8, 126, 9, 17, '#416c3d');
+  }
+  line(c, 0, 40, 180, 40, '#d3d8b9', 4);
+  line(c, 0, 91, 180, 91, '#a4b59a', 3);
+  line(c, 0, 150, 180, 150, '#d3d8b9', 4);
+  c.restore();
+  // The blue allotment shed: the same team colour as the playable buildings.
+  c.save();
+  c.translate(945, 478);
+  ell(c, 70, 166, 140, 28, 'rgba(17,34,23,.38)', -0.12);
+  c.fillStyle = '#315c68';
+  c.fillRect(0, 25, 153, 133);
+  c.fillStyle = '#27494e';
+  c.beginPath();
+  c.moveTo(153, 25);
+  c.lineTo(199, 3);
+  c.lineTo(199, 137);
+  c.lineTo(153, 158);
+  c.fill();
+  for (let y = 33; y < 157; y += 13) line(c, 0, y, 153, y, '#497786', 2);
+  c.beginPath();
+  c.moveTo(-16, 30);
+  c.lineTo(69, -43);
+  c.lineTo(168, 30);
+  c.closePath();
+  c.fillStyle = '#ba7850';
+  c.fill();
+  c.beginPath();
+  c.moveTo(69, -43);
+  c.lineTo(123, -66);
+  c.lineTo(216, 5);
+  c.lineTo(168, 30);
+  c.closePath();
+  c.fillStyle = '#744d3c';
+  c.fill();
+  for (let y = -25; y < 24; y += 12) line(c, 69 - (y + 43) * 1.15, y, 69 + (y + 43) * 1.35, y, '#965c40', 2);
+  line(c, -16, 30, 69, -43, '#e0a56b', 5);
+  line(c, 69, -43, 168, 30, '#e0a56b', 5);
+  c.fillStyle = '#1b3941';
+  c.fillRect(89, 55, 43, 102);
+  line(c, 91, 57, 130, 57, '#6c9190', 3);
+  circ(c, 121, 107, 3, '#e4bd71');
+  c.fillStyle = '#e4cf93';
+  c.fillRect(16, 55, 49, 43);
+  c.fillStyle = '#91b9ad';
+  c.fillRect(20, 59, 41, 35);
+  c.beginPath();
+  c.moveTo(20, 59);
+  c.lineTo(53, 59);
+  c.lineTo(20, 89);
+  c.fillStyle = '#cbdac0';
+  c.fill();
+  line(c, 40, 59, 40, 94, '#e4cf93', 3);
+  line(c, 20, 77, 61, 77, '#e4cf93', 3);
+  c.fillStyle = '#926b43';
+  c.fillRect(8, 100, 67, 12);
+  for (let i = 0; i < 7; i++) {
+    circ(c, 14 + i * 9, 96 - R() * 6, 7, '#638441');
+    circ(c, 14 + i * 9, 93 - R() * 7, 3, i % 2 ? '#e2bc63' : '#e79978');
+  }
+  c.fillStyle = '#c5b58a';
+  c.fillRect(35, 11, 67, 20);
+  c.font = 'bold 10px Georgia';
+  c.textAlign = 'center';
+  c.fillStyle = '#394e3a';
+  c.fillText('PLOT No. 01', 68, 25);
+  // Water butt and a fork leaning against the wall.
+  ell(c, -20, 146, 23, 12, '#17392e');
+  c.fillStyle = '#376c67';
+  c.fillRect(-43, 105, 46, 41);
+  ell(c, -20, 105, 23, 10, '#65938a');
+  ell(c, -20, 105, 17, 6, '#224c52');
+  line(c, 170, 142, 186, 67, '#c3a06c', 4);
+  line(c, 183, 76, 198, 80, '#abb8a4', 3);
+  for (let i = 0; i < 4; i++) line(c, 183 + i * 5, 76 + i, 185 + i * 5, 61 + i, '#abb8a4', 2);
+  c.restore();
+  // Foreground fence and flowers frame the illustration, leaving the title calm.
+  for (const y of [884, 933]) line(c, 575, y, 1450, y + 45, '#9c8052', 13);
+  for (let i = 0; i < 13; i++) {
+    const x = 620 + i * 70,
+      y = 868 + i * 4;
+    c.fillStyle = '#bb9c68';
+    c.beginPath();
+    c.moveTo(x - 9, y + 120);
+    c.lineTo(x - 9, y);
+    c.lineTo(x, y - 14);
+    c.lineTo(x + 9, y);
+    c.lineTo(x + 9, y + 120);
+    c.fill();
+    line(c, x - 6, y + 5, x - 6, y + 108, '#d4b781', 2);
+    circ(c, x + 1, y + 21, 2, '#5c5338');
+  }
+  for (let i = 0; i < 75; i++) {
+    const x = 590 + R() * 900,
+      y = 960 + R() * 80,
+      h = 15 + R() * 68;
+    line(c, x, y, x - 5, y - h, '#426438', 2);
+    ell(c, x + 2, y - h * 0.5, 9, 3, '#6d863e', -0.6);
+    if (i % 3 === 0) {
+      for (let a = 0; a < 5; a++)
+        circ(
+          c,
+          x - 5 + Math.cos(a * 1.26) * 5,
+          y - h + Math.sin(a * 1.26) * 5,
+          4,
+          i % 2 ? '#e6bd61' : '#e7d7aa'
+        );
+      circ(c, x - 5, y - h, 3, '#77572f');
+    }
+  }
+  // Tiny birds in the evening sky.
+  for (let i = 0; i < 4; i++) {
+    const x = 900 + i * 38,
+      y = 275 + Math.sin(i * 2) * 19;
+    c.beginPath();
+    c.moveTo(x - 8, y);
+    c.quadraticCurveTo(x - 3, y - 3, x, y + 2);
+    c.quadraticCurveTo(x + 4, y - 4, x + 9, y - 2);
+    c.strokeStyle = '#395b54';
+    c.lineWidth = 2;
+    c.stroke();
+  }
+}
+
+function setMenuOpen(open) {
+  document.body.classList.toggle('menu-open', open);
+  if (open) requestAnimationFrame(drawTitleArt);
+}
+
+function resultEmblem(win) {
+  return `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="53" stroke="currentColor" opacity=".25"/><circle cx="60" cy="60" r="46" stroke="currentColor" stroke-dasharray="2 5" opacity=".45"/><path d="M40 90C17 75 22 46 35 33M80 90c23-15 18-44 5-57" stroke="currentColor" stroke-width="2"/><path d="M29 68l-9-12 12 3m-4-7-4-14 11 8m-3 32-11-7 13-1m57-2 9-12-12 3m4-7 4-14-11 8m3 32 11-7-13-1" fill="currentColor" opacity=".7"/>${win ? '<path d="M43 80l31-43m-6-5 12 9m-15-5 9-12m-3 17 9-12m-3 17 9-12M76 80L48 43m-6-8c-8-11-14-2-6 7l10 9 9-7z" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' : '<path d="M60 86V62l-8-8 8-10V31M59 46c-18 0-23-10-22-18 14 0 23 5 22 18zm2 18c17 0 23-10 22-18-14 0-22 5-22 18z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>'}</svg>`;
+}
+
+new ResizeObserver(() => {
+  if (!$('#brief').hidden) drawTitleArt();
+}).observe($('#brief'));
+setMenuOpen(!$('#brief').hidden);
+
+
 /* ===== src/main.js ===== */
 // Start-up: keyboard shortcuts, phone/desktop layout switching, menus, and creating the Phaser game.
 'use strict';
@@ -5682,6 +6905,8 @@ function togglePause() {
   if (!G || G.over) return;
   G.paused = !G.paused;
   $('#paused').hidden = !G.paused;
+  if (G.paused) $('#resume').focus();
+  else $('#resume').blur();
 }
 window.addEventListener('keydown', ev => {
   if (!G || !S) return;
@@ -5800,6 +7025,8 @@ function layout() {
 }
 if (MQ.addEventListener) MQ.addEventListener('change', layout);
 else MQ.addListener(layout);
+$('#mini').height = Math.round($('#mini').width * MH / MW);
+$('#mini').style.aspectRatio = MW + ' / ' + MH;
 layout();
 for (const b of document.querySelectorAll('.tab[data-tab]'))
   b.addEventListener('click', () => {
@@ -5815,6 +7042,8 @@ for (const b of document.querySelectorAll('[data-cmd]'))
   });
 $('#paused').addEventListener('click', togglePause);
 function start(diff) {
+  setMenuOpen(false);
+  document.body.classList.remove('result-open');
   $('#brief').hidden = true;
   $('#over').hidden = true;
   $('#paused').hidden = true;
@@ -5828,7 +7057,10 @@ document
 $('#again').addEventListener('click', () => start(G ? G.diffKey : 'standard'));
 $('#menu').addEventListener('click', () => {
   $('#over').hidden = true;
+  document.body.classList.remove('result-open');
   $('#brief').hidden = false;
+  setMenuOpen(true);
+  $('#brief [data-diff="standard"]').focus();
 });
 // The canvas has DPR device pixels per screen point, so it stays sharp on phones; Phaser's zoom shrinks it back to fit.
 const stageSize = () => {
@@ -5841,7 +7073,8 @@ game = new Phaser.Game({
   parent: 'stage',
   backgroundColor: '#0c0907',
   scale: { mode: Phaser.Scale.NONE, width: stageW, height: stageH, zoom: 1 / DPR },
-  render: { antialias: true },
+  // Phaser otherwise enables pixel-art mode whenever scale.zoom differs from 1 (our DPR fix).
+  render: { antialias: true, pixelArt: false, roundPixels: false },
   banner: false,
   input: { mouse: { preventDefaultWheel: true } },
 });

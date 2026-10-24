@@ -28,5 +28,9 @@ function endGame(win) {
   $('#st-comp').textContent = G.stats.harvested.toLocaleString('en-GB');
   $('#st-kill').textContent = G.stats.killed;
   $('#st-lost').textContent = G.stats.lost;
+  document.body.classList.add('result-open');
+  $('#over').dataset.result = win ? 'victory' : 'defeat';
+  $('#result-seal').innerHTML = resultEmblem(win);
   $('#over').hidden = false;
+  $('#again').focus();
 }

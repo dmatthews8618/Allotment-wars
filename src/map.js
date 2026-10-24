@@ -18,12 +18,12 @@ function tryMap(seed) {
     terr[idx(MW - 1 - x, MH - 1 - y)] = v;
   };
   const g = () => (R() + R() + R() - 1.5) / 1.5;
-  const nearBase = (x, y, d) => Math.hypot(x - 10, y - 38) < d || Math.hypot(x - 53, y - 9) < d;
+  const nearBase = (x, y, d) => Math.hypot(x - 10, y - 38) < d || Math.hypot(x - (MW - 11), y - 9) < d;
   let placed = 0,
     tries = 0;
-  const nP = 3 + ((R() * 2) | 0);
+  const nP = Math.round(((3 + ((R() * 2) | 0)) * MW) / 64);
   while (placed < nP && tries++ < 60) {
-    const cx = 16 + R() * 32,
+    const cx = 16 + R() * (MW - 32),
       cy = 6 + R() * 36;
     if (nearBase(cx, cy, 15)) continue;
     const r = 1.8 + R() * 2;
@@ -33,9 +33,9 @@ function tryMap(seed) {
       }
     placed++;
   }
-  const nH = 5 + ((R() * 3) | 0);
+  const nH = Math.round(((5 + ((R() * 3) | 0)) * MW) / 64);
   for (let i = 0; i < nH; i++) {
-    const hx = 12 + ((R() * 40) | 0),
+    const hx = 12 + ((R() * (MW - 24)) | 0),
       hy = 4 + ((R() * 40) | 0);
     if (nearBase(hx, hy, 13)) continue;
     const len = 4 + ((R() * 6) | 0),
@@ -45,9 +45,9 @@ function tryMap(seed) {
   for (let y = 26; y <= 46; y++) for (let x = 1; x <= 21; x++) set(x, y, 0);
   const P = [
     [9, 37],
-    [20 + R() * 6, 26 + R() * 6],
-    [38 + R() * 6, 16 + R() * 6],
-    [54, 10],
+    [MW * 0.32 + R() * 6, 26 + R() * 6],
+    [MW * 0.6 + R() * 6, 16 + R() * 6],
+    [MW - 10, 10],
   ];
   for (let t = 0; t <= 1; t += 0.003) {
     const u = 1 - t;
@@ -76,7 +76,8 @@ function tryMap(seed) {
     terr[idx(0, y)] = 3;
     terr[idx(MW - 1, y)] = 3;
   }
-  for (let y = 1; y <= 20; y++) for (let x = 42; x <= 62; x++) if (terr[idx(x, y)] === 0) terr[idx(x, y)] = 5;
+  for (let y = 1; y <= 20; y++)
+    for (let x = MW - 22; x <= MW - 2; x++) if (terr[idx(x, y)] === 0) terr[idx(x, y)] = 5;
   const tmpl = new Uint8Array(MW * MH);
   for (const [k, x, y] of [...TEMPLATE, ...DEF_TEMPLATE]) {
     const d = BLDS[k];
@@ -120,7 +121,9 @@ function tryMap(seed) {
   };
   field(19, 43, 8, 500);
   field(7, 28, 7, 500);
-  field(26, 21, 9, 800);
+  field(Math.round(MW * 0.40625), 21, 9, 800);
+  // Additional mirrored expansion fields reward moving into the wider centre.
+  field(Math.round(MW * 0.47), 34, 6, 600);
   const seen = new Uint8Array(MW * MH),
     q = [idx(10, 44)];
   seen[q[0]] = 1;
@@ -145,7 +148,7 @@ function tryMap(seed) {
       q.push(n);
     }
   }
-  if (!seen[idx(53, 3)]) return null;
+  if (!seen[idx(MW - 11, 3)]) return null;
   for (const h of heaps) if (!seen[idx(h.tx, h.ty)]) return null;
   return { terr, heaps, heapAt };
 }
