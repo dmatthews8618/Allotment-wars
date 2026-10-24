@@ -74,6 +74,9 @@ $('#info').addEventListener('click', ev => {
   else if (b.dataset.act === 'sell') doSell();
 });
 const MQ = window.matchMedia('(max-width:760px),(max-height:540px)');
+$('#garden-status').addEventListener('click', () => {
+  if (G && !G.over) focusGarden();
+});
 let curTab = 'build';
 function setTab(t) {
   curTab = t;
@@ -109,12 +112,12 @@ function layout() {
   document.body.classList.toggle('compact', c);
   if (c) {
     $('#hud-res').append($('.res'));
-    $('#hud-minislot').append($('#mini'));
+    $('#hud-minislot').append($('#mini'), $('#garden-status'));
     $('#tray-slot').append($('#build'), $('#train'), $('#upg'));
     setTab(curTab);
   } else {
     $('#slot-res').append($('.res'));
-    $('#slot-mini').append($('#mini'));
+    $('#slot-mini').append($('#mini'), $('#garden-status'));
     $('#slot-build').append($('#build'));
     $('#slot-train').append($('#train'));
     $('#slot-upg').append($('#upg'));
@@ -126,7 +129,7 @@ function layout() {
 }
 if (MQ.addEventListener) MQ.addEventListener('change', layout);
 else MQ.addListener(layout);
-$('#mini').height = Math.round($('#mini').width * MH / MW);
+$('#mini').height = Math.round(($('#mini').width * MH) / MW);
 $('#mini').style.aspectRatio = MW + ' / ' + MH;
 layout();
 for (const b of document.querySelectorAll('.tab[data-tab]'))

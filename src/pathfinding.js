@@ -111,7 +111,7 @@ function findPath(sx, sy, gx, gy) {
       best = c;
       break;
     }
-    if (++exp > 4200) break;
+    if (++exp > MW * MH) break;
     const cx = c % MW,
       cy = (c / MW) | 0;
     const h = H(cx, cy);

@@ -1656,3 +1656,39 @@ body.compact .cmd.on {
     width: min(100%, 200px);
   }
 }
+
+/* Community territory: a compact map control shared by desktop and phones. */
+.garden-status {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 7px;
+  padding: 6px 8px;
+  border: 1px solid #667750;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #354833, #23372c);
+  color: #e9ddb1;
+  font: 600 12px var(--display);
+  cursor: pointer;
+}
+.garden-status:hover,
+.garden-status:focus-visible {
+  background: #40583b;
+  outline: 2px solid #c4cf91;
+  outline-offset: 2px;
+}
+.garden-tip,
+.garden-result {
+  color: #bcca9e;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+body.compact .garden-status {
+  min-height: 36px;
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 5px 3px;
+}
+body.compact #hud-minislot {
+  width: 100%;
+}

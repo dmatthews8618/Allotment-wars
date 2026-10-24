@@ -39,11 +39,15 @@ function fire(e, t) {
   }
   p.total = Math.max(1, Math.hypot(p.tx - sx, p.ty - sy));
   if (!G.headless) {
-    p.spr = S.add.image(sx, sy, kind).setDepth(5);
+    const launchLift = paintedInfantry(e) ? 9 : 0;
+    p.spr = S.add.image(sx, sy - launchLift, kind).setDepth(5);
     if (arc) p.sh = S.add.image(sx, sy, 'pshadow').setDepth(4.4);
     if (pk === 'drop' && visibleToPlayerPt(sx, sy))
       for (let k = 0; k < 2; k++) {
-        const im = S.add.image(sx, sy, 'drop').setDepth(5).setScale(0.7);
+        const im = S.add
+          .image(sx, sy - launchLift, 'drop')
+          .setDepth(5)
+          .setScale(0.7);
         const a = Math.atan2(t.y - sy, t.x - sx) + (Math.random() - 0.5) * 0.5,
           l = p.total * (0.5 + Math.random() * 0.4);
         S.tweens.add({
@@ -91,7 +95,8 @@ function updProj(dt) {
     }
     if (p.kind === 'bees') p.spr.rotation += dt * 10;
     const vis = p.team === 0 || visibleToPlayerPt(p.x, p.y);
-    p.spr.setPosition(p.x, p.y - h).setVisible(vis);
+    const launchLift = p.src && paintedInfantry(p.src) ? 9 * clamp(d / p.total, 0, 1) : 0;
+    p.spr.setPosition(p.x, p.y - h - launchLift).setVisible(vis);
     if (p.sh)
       p.sh
         .setPosition(p.x, p.y)

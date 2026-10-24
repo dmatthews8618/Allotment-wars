@@ -48,7 +48,7 @@ Other keys: S stop, Q all troops, R repair, H home, P pause, Shift+1–5 save a 
 
 ## How it's made
 
-The game is built on [Phaser 3](https://phaser.io), which handles drawing, the camera and input. Everything else is plain JavaScript in `src/`. There are no image files: every sprite and the whole map are drawn by code when the game loads.
+The game is built on [Phaser 3](https://phaser.io), which handles drawing, the camera and input. Everything else is plain JavaScript in `src/`. Buildings, characters, machinery and garden materials use painted-style sprite atlases in `assets/`. Terrain is composited once per map; connected fences, animated gates and effects are drawn by code. The atlases are embedded into generated scripts so the game still opens directly from disk and bundles into one HTML file.
 
 ```
 index.html        the page: menus, sidebar, phone controls
@@ -56,8 +56,14 @@ css/style.css     the look of the page
 css/base.css      page reset for the standalone version
 src/
   config.js       settings and game data: units, buildings, upgrades, difficulty
-  map.js          random, mirrored map generator
-  art.js          all the artwork, drawn in code
+  map.js          seeded maps with seven enemy starting regions
+  art.js          texture creation, effects and fallback art
+  building-art.js painted building sprite extraction and scaling
+  building-atlas-data.js generated embedded building WebP atlas
+  garden-art.js   terrain materials, crops, connected fences and gate poses
+  garden-atlas-data.js generated embedded garden atlas
+  unit-art.js     character directions, walking and machinery-state art
+  unit-atlas-data.js / unit-directions-data.js  generated unit atlases
   entities.js     creating buildings and units
   pathfinding.js  route-finding round obstacles, fences and gates
   units.js        unit behaviour and harvesting
@@ -70,12 +76,14 @@ src/
   input.js        mouse and touch orders
   ambience.js     clouds, butterflies, ripples
   scene.js        the main game loop
+  presentation.js illustrated title, result emblems and menu presentation
   main.js         start-up, menus and layout
 tools/
   build.py        bundles everything into one file for the claude.ai version
   checks.py       set-piece tests of the game's rules
   playtest.py     plays fixed-seed matches in a hidden browser to check balance
   screens.py      screenshots on desktop and emulated phones, plus touch-control tests
+  presentation_check.py  title-to-results screen flow and responsive-layout checks
   harness.py      shared set-up for the test tools
 ```
 
@@ -90,6 +98,10 @@ Download the repo and open `index.html` in a browser. You need an internet conne
 ```
 npm install
 pip install playwright
+node tools/map_check.js
+python3 tools/spawn_check.py
+python3 tools/daylight_check.py
+python3 tools/objectives_check.py
 python3 tools/checks.py
 python3 tools/playtest.py
 ```
@@ -103,3 +115,15 @@ python3 tools/playtest.py
 All of them fail if the game throws any errors.
 
 To refresh the single-file version used on claude.ai, run `python3 tools/build.py` and publish `dist/allotment-wars.html`.
+
+The visual review and polish notes are in [docs/visual-review.md](docs/visual-review.md). Run `python3 tools/presentation_check.py` to capture the title, pause, victory and defeat screens and check replay, difficulty changes and rotation.
+
+The battlefield is 120×80 tiles (3,840×2,560 world pixels), over twice the previous area. Enemy bases choose from seven regions with position variation each match. Both sides receive equal starter supplies and nearby expansion compost; additional fields are spread across the map. Fog of war keeps the enemy location hidden until scouted.
+
+The character and machinery art pipeline is documented in [docs/unit-art.md](docs/unit-art.md). Run `python3 tools/unit_art_check.py` to check facing, walking and equipment states.
+
+Terrain and boundary artwork is documented in [docs/garden-art.md](docs/garden-art.md). Run `python3 tools/garden_art_check.py` to verify material seams, fence joins, gate animation and unchanged terrain/collision grids.
+
+Matches now follow an eight-minute visual day/night cycle: warm afternoon, sunset, moonlight and dawn. Windows and entrance lanterns glow at night, fireflies gather near crops, and ponds catch the changing light. Pause holds the cycle; reduced-motion preferences quiet the new effects. Lighting does not change gameplay or fog of war.
+
+Three capturable community gardens add territorial objectives. Scout their gold map diamonds, hold a flag with fighting units, and earn 75 compost every 30 seconds while secure. Opposing troops pause capture and income. The Gardens control cycles between discovered plots, and the enemy sends squads to contest them. See [community garden rules](docs/community-gardens.md).

@@ -3,8 +3,8 @@
 
 const $ = s => document.querySelector(s);
 const T = 32,
-  MW = 96,
-  MH = 48,
+  MW = 120,
+  MH = 80,
   WW = MW * T,
   WH = MH * T,
   CAP = 300;
@@ -12,6 +12,7 @@ const T = 32,
 // and unit and building sprites are drawn at double resolution so they stay crisp when zoomed.
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 const RES = 2;
+const COMMUNITY = { radius: 3.5, captureSeconds: 12, income: 75, interval: 30, sight: 5 };
 const TEAM = [
   { main: '#3d7cc9', dark: '#22508a', light: '#a5cdf5', sel: 0x9fd0ff, name: 'Plot Holders' },
   { main: '#c9493d', dark: '#7d2620', light: '#f4a493', sel: 0xf4a493, name: 'Tidy Lawns Society' },
@@ -325,6 +326,12 @@ const DIFF = {
     upgrades: true,
   },
 };
+const PLAYER_START = { x: 5, y: MH - 10, mirrorX: false, mirrorY: false, zone: 'home' };
+const PLAYER_TROOPS = [
+  [10, MH - 4],
+  [11, MH - 4],
+  [12, MH - 4],
+];
 const TEMPLATE = [
   ['hq', 5, 38],
   ['water', 9, 38],
@@ -334,11 +341,11 @@ const TEMPLATE = [
   ['tunnel', 13, 40],
   ['scare', 16, 36],
   ['scare', 14, 32],
-];
+].map(([kind, x, y]) => [kind, x + PLAYER_START.x - 5, y + PLAYER_START.y - 38]);
 const DEF_TEMPLATE = [
   ['hive', 17, 39],
   ['sprink', 11, 31],
-];
+].map(([kind, x, y]) => [kind, x + PLAYER_START.x - 5, y + PLAYER_START.y - 38]);
 
 let S = null,
   G = null,

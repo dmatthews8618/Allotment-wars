@@ -25,11 +25,11 @@ BATTLE = """() => {
     A.clickBuild(k);
     if (!G.build[0]) return;
     G.build[0].t = G.build[0].total; G.build[0].ready = true;
-    for (let r = 2; r < 12; r++) for (let y = 36 - r; y <= 39 + r; y++) for (let x = 5 - r; x <= 8 + r; x++)
+    for (let r = 2; r < 12; r++) for (let y = PLAYER_START.y - 2 - r; y <= PLAYER_START.y + 1 + r; y++) for (let x = 5 - r; x <= 8 + r; x++)
       if (A.canPlace(0, k, x, y, false)) { A.addBuilding(0, k, x, y, true); G.build[0] = null; return; }
   };
   for (const k of ['water', 'bin', 'shed', 'water', 'tunnel', 'scare', 'hive', 'water']) place(k);
-  A.clickBuild('wall'); A.wallClick(17 * 32, 30 * 32); A.wallClick(17 * 32, 37 * 32); G.placing = null;
+  A.clickBuild('wall'); A.wallClick(17 * 32, (PLAYER_START.y - 8) * 32); A.wallClick(17 * 32, (PLAYER_START.y - 1) * 32); G.placing = null;
   for (let i = 0; i < 3; i++) { A.clickTrain('fork'); A.clickTrain('hose'); A.clickTrain('tiller'); }
   for (let i = 0; i < 900; i++) A.tick(0.05);
   G.ai.waveT = 0;
@@ -64,6 +64,9 @@ async def drag(cdp, a, b, steps=8):
 
 
 async def touch_tests(page, results):
+    # Keep orders observable: input must be enabled, but units must not finish
+    # moving while a slow software-rendered browser is dispatching the next tap.
+    await page.evaluate("() => { const sc = window.__AW.S; sc.sys.sceneUpdate = () => { sc.render(0); uiTick(); drawMini(); }; }")
     cdp = await page.context.new_cdp_session(page)
     ev = page.evaluate
     ok = lambda name, cond, detail="": results.append((name, bool(cond), detail))
@@ -90,7 +93,7 @@ async def touch_tests(page, results):
     ground = await ev("""(u) => { const S = window.__AW.S, c = S.cameras.main, cv = S.game.canvas, r = cv.getBoundingClientRect(), k = r.width / cv.width;
         for (let rr = 3; rr < 9; rr++) for (let a = 0; a < 16; a++) {
           const x = u[0] + Math.cos(a * 0.4) * rr * 32, y = u[1] + Math.sin(a * 0.4) * rr * 32;
-          const i = Math.floor(y / 32) * 64 + Math.floor(x / 32);
+          const i = Math.floor(y / 32) * MW + Math.floor(x / 32);
           const sx = r.x + (x - c.worldView.x) * c.zoom * k, sy = r.y + (y - c.worldView.y) * c.zoom * k;
           if (!pick(x, y, 20) && !window.__AW.G.blocked[i] && window.__AW.G.vis[i] === 2 && document.elementFromPoint(sx, sy) === cv) return [x, y]; } }""", unit)
     await tap(cdp, await ev(W2S, ground)); await page.wait_for_timeout(80)
@@ -120,7 +123,7 @@ async def touch_tests(page, results):
     await page.tap('#b-water'); await page.wait_for_timeout(80)
     count = "() => window.__AW.G.ents.filter(e => e.kind === 'water' && e.team === 0).length"
     n0 = await ev(count)
-    spot = await ev("() => { const A = window.__AW; for (let r = 2; r < 9; r++) for (let y = 37 - r; y <= 39 + r; y++) for (let x = 5 - r; x <= 8 + r; x++) if (A.canPlace(0, 'water', x, y, false)) return [(x + 1) * 32, (y + 1) * 32]; }")
+    spot = await ev("() => { const A = window.__AW; for (let r = 2; r < 9; r++) for (let y = PLAYER_START.y - 1 - r; y <= PLAYER_START.y + 1 + r; y++) for (let x = 5 - r; x <= 8 + r; x++) if (A.canPlace(0, 'water', x, y, false)) return [(x + 1) * 32, (y + 1) * 32]; }")
     t = await ev(W2S, spot)
     await tap(cdp, t); await page.wait_for_timeout(120)
     mid = await ev(count)
@@ -143,6 +146,8 @@ async def main():
             results.append((f"{name}: no sideways page scroll", not overflow, ""))
             canvas = await page.evaluate("() => { const c = window.__AW.S.game.canvas, r = c.getBoundingClientRect(); return [c.width, Math.round(r.width)]; }")
             if phone:
+                smooth = await page.evaluate("() => game.config.antialias && !game.config.pixelArt && G.fogTex.source[0].scaleMode === Phaser.Textures.FilterMode.LINEAR")
+                results.append((f"{name}: high-density artwork and fog retain smooth filtering", smooth, ""))
                 results.append((f"{name}: canvas renders at high density", canvas[0] >= canvas[1] * 2 - 2, f"{canvas[0]} pixels across {canvas[1]} points"))
                 await touch_tests(page, results)
             for e in errors:

@@ -224,6 +224,21 @@ function leftClick(wx, wy, shift, touch, time) {
       return;
     }
   }
+  const garden = gardenNear(wx, wy);
+  if (garden && !ent) {
+    const fighters = mine.filter(u => !u.d.harv);
+    if (fighters.length) {
+      orderMove(fighters, 'amove', garden.x, garden.y);
+      marker(garden.x, garden.y, 0xe5d28c);
+      announce('Hold ' + garden.name + ' to claim its compost income');
+    } else if (!mine.length) {
+      G.sel = [];
+      G.focusGarden = garden.id;
+      uiTick();
+      announce(garden.name + ' · ' + gardenStatus(garden));
+    }
+    if (fighters.length || !mine.length) return;
+  }
   const hi = inb(tx, ty) ? G.heapAt[idx(tx, ty)] : -1;
   const harvs = mine.filter(u => u.d.harv);
   if (hi >= 0 && harvs.length && G.vis[idx(tx, ty)] > 0) {
@@ -252,6 +267,7 @@ function leftClick(wx, wy, shift, touch, time) {
     return;
   }
   G.sel = [];
+  G.focusGarden = null;
 }
 function boxSelect(x1, y1, x2, y2, shift) {
   const minx = Math.min(x1, x2),

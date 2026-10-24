@@ -19,6 +19,18 @@ function updVis() {
         if (dx * dx + dy * dy <= r2) v[idx(x, y)] = 2;
       }
   }
+  for (const g of G.gardens) {
+    if (g.owner !== 0) continue;
+    const r = COMMUNITY.sight;
+    for (let y = g.ty - r; y <= g.ty + r; y++)
+      for (let x = g.tx - r; x <= g.tx + r; x++)
+        if (inb(x, y) && (x - g.tx) ** 2 + (y - g.ty) ** 2 <= r * r) v[idx(x, y)] = 2;
+  }
+  for (const g of G.gardens)
+    if (v[idx(g.tx, g.ty)] === 2 || g.owner === 0) {
+      g.seen = true;
+      g.knownOwner = g.owner;
+    }
   if (G.headless) return;
   const D = G.fogImg.data;
   for (let i = 0; i < v.length; i++) {

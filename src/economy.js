@@ -100,7 +100,7 @@ function canPlace(team, kind, tx, ty, skipNear) {
     for (let x = tx; x < tx + d.w; x++) {
       if (x < 1 || y < 1 || x > MW - 2 || y > MH - 2) return false;
       const k = idx(x, y);
-      if (G.blocked[k] || G.heapAt[k] >= 0) return false;
+      if (G.blocked[k] || G.heapAt[k] >= 0 || G.gardenAt[k]) return false;
       if (team === 0 && G.vis[k] === 0) return false;
     }
   if (skipNear) return true;

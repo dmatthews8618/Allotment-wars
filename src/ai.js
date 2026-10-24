@@ -88,14 +88,16 @@ function updAI(dt) {
         }
     }
   }
+  updGardenAI(army, hq);
   if (A.waveT <= 0) {
-    const idle = army.filter(u => !u.wave);
+    const idle = army.filter(u => !u.wave && u.gardenId == null);
     const need = Math.min(G.diffKey === 'gentle' ? 2 + A.waveN : 3 + A.waveN * 2, G.D.waveMax);
     if (idle.length >= need) {
-      const tgt = playerTarget(hq || { x: WW - 200, y: 200 });
+      const home = hq || { x: (G.enemyStart.x + 1.5) * T, y: (G.enemyStart.y + 1.5) * T };
+      const tgt = playerTarget(home);
       if (tgt) {
         const keep = idle.length > need + 1 ? 2 : 0;
-        idle.sort((a, b) => Math.hypot(b.x - WW, b.y) - Math.hypot(a.x - WW, a.y));
+        idle.sort((a, b) => Math.hypot(b.x - home.x, b.y - home.y) - Math.hypot(a.x - home.x, a.y - home.y));
         const send = idle.slice(0, Math.min(idle.length - keep, G.D.waveMax));
         for (const u of send) {
           u.wave = true;

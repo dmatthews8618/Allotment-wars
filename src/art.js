@@ -1,4 +1,4 @@
-// All artwork. Every sprite and the terrain are drawn with canvas code when the game loads; there are no image files.
+// Terrain, units, effects and fallback buildings are drawn with canvas code. Painted buildings are composited from the atlas.
 'use strict';
 
 /* ---------------- textures ---------------- */
@@ -698,6 +698,7 @@ function head(c, team, C) {
   }
 }
 function drawWall(c, team, mask) {
+  if (gardenArt) return drawGardenFence(c, team, mask);
   const C = TEAM[team],
     N = mask & 1,
     E = mask & 2,
@@ -775,6 +776,7 @@ function drawWall(c, team, mask) {
   }
 }
 function drawGate(c, team, open) {
+  if (gardenArt) return drawGardenGate(c, team, open ? 1 : 0);
   const C = TEAM[team];
   if (team === 0) {
     for (const x of [3, 29]) {
@@ -831,13 +833,18 @@ function drawGate(c, team, open) {
   }
 }
 function makeTextures() {
-  const us = { barrow: 30, fork: 22, hose: 22, tiller: 32, cata: 34 };
+  prepareGardenArt();
+  preparePaintedBuildings();
+  preparePaintedUnits();
+  const us = paintedUnitFrames
+    ? PAINTED_UNIT_SIZES
+    : { barrow: 30, fork: 22, hose: 22, tiller: 32, cata: 34 };
   for (let team = 0; team < 2; team++) {
     const C = TEAM[team];
     for (const k in BLDS) {
       if (BLDS[k].wall) continue;
       const d = BLDS[k];
-      mkTex(k + '_' + team, d.w * T, d.h * T, (c, W, H) => DRAW[k](c, W, H, C, team), RES);
+      mkTex(k + '_' + team, d.w * T, d.h * T, (c, W, H) => drawPaintedBuilding(c, W, H, k, team), RES);
     }
     for (const k in us)
       for (let f = 0; f < 2; f++)
@@ -845,28 +852,42 @@ function makeTextures() {
           `${k}_${team}_${f}`,
           us[k],
           us[k],
-          outlined((c, W, H) => DRAW[k](c, W, H, C, team, f, false)),
+          (c, W, H) => drawUnitTexture(c, W, H, k, team, f, false),
           RES
         );
+    if (paintedUnitDirections)
+      for (const k of ['fork', 'hose'])
+        for (const direction of ['n', 's'])
+          for (let f = 0; f < 2; f++)
+            mkTex(
+              `${k}_${team}_${f}_${direction}`,
+              us[k],
+              us[k],
+              (c, W, H) => drawUnitTexture(c, W, H, k, team, f, false, direction),
+              RES
+            );
     for (let f = 0; f < 2; f++)
       mkTex(
         `barrowfull_${team}_${f}`,
-        30,
-        30,
-        outlined((c, W, H) => DRAW.barrow(c, W, H, C, team, f, true)),
+        us.barrow,
+        us.barrow,
+        (c, W, H) => drawUnitTexture(c, W, H, 'barrow', team, f, true),
         RES
       );
     for (let f = 0; f < 2; f++)
       mkTex(
         `catafire_${team}_${f}`,
-        34,
-        34,
-        outlined((c, W, H) => DRAW.cata(c, W, H, C, team, f, true)),
+        us.cata,
+        us.cata,
+        (c, W, H) => drawUnitTexture(c, W, H, 'cata', team, f, true),
         RES
       );
     mkTex('wall_' + team + '_10', 32, 32, c => drawWall(c, team, 10), RES);
     mkTex('gate_' + team + '_0', 32, 32, c => drawGate(c, team, false), RES);
     mkTex('gate_' + team + '_1', 32, 32, c => drawGate(c, team, true), RES);
+    if (gardenArt)
+      for (let frame = 1; frame < 4; frame++)
+        mkTex(`gate_${team}_step${frame}`, 32, 32, c => drawGardenGate(c, team, frame / 4), RES);
     mkTex('rally_' + team, 16, 22, c => {
       line(c, 3, 21, 3, 3, '#e8dfc8', 2);
       c.beginPath();
@@ -960,6 +981,7 @@ function makeTextures() {
     40,
     40,
     c => {
+      if (gardenArt) return drawGardenHeap(c);
       ell(c, 22, 26, 17, 11, 'rgba(0,0,0,.3)');
       ell(c, 20, 22, 16, 12, rad(c, 20, 22, 16, ['#6a4a33', '#4a3424', '#33241a'], 16, 17));
       ell(c, 18, 19, 9, 6, 'rgba(140,100,70,.35)');
@@ -1023,6 +1045,7 @@ function iconURL(key) {
   return cv._url;
 }
 function drawTerrain() {
+  if (gardenArt) return drawPaintedGardenTerrain();
   const cv = document.createElement('canvas');
   cv.width = WW;
   cv.height = WH;

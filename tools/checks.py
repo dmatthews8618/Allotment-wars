@@ -11,21 +11,21 @@ from playwright.async_api import async_playwright
 
 from harness import LAUNCH_ARGS, open_match
 
-# Every scenario starts by clearing all units and freezing the AI.
+# Isolate set-pieces from randomly positioned enemy defences and freeze the AI.
 PREP = """
 const A = window.__AW, G = A.G;
 G.ai.tick = 1e9; G.ai.waveT = 1e9;
-for (const e of G.ents) if (e.unit) { e.dead = true; e.spr.destroy(); e.sh && e.sh.destroy(); }
+for (const e of G.ents) if (e.unit || (e.team === 1 && e.bld && e.kind !== 'hq')) { e.dead = true; e.spr.destroy(); e.sh && e.sh.destroy(); if (e.bld) clearFootprint(e); }
 G.ents = G.ents.filter(e => !e.dead);
 const at = (x, y) => [x * 32 + 16, y * 32 + 16];
 const clear = (x0, y0, x1, y1) => {           // flatten terrain so the set-piece is the same on every map
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-    const i = y * 64 + x; G.terr[i] = 0; G.blocked[i] = 0;
+    const i = y * MW + x; G.terr[i] = 0; G.blocked[i] = 0;
     if (G.heapAt[i] >= 0) { const h = G.heaps[G.heapAt[i]]; h.amount = 0; G.heapAt[i] = -1; if (h.spr) { h.spr.destroy(); h.spr = null; } }
   }
 };
 const run = secs => { for (let i = 0; i < secs * 20; i++) A.tick(0.05); };
-const tileBlockedFor = (u) => { const i = Math.floor(u.y / 32) * 64 + Math.floor(u.x / 32); return G.blocked[i] && G.gateTeam[i] !== u.team; };
+const tileBlockedFor = (u) => { const i = Math.floor(u.y / 32) * MW + Math.floor(u.x / 32); return G.blocked[i] && G.gateTeam[i] !== u.team; };
 """
 
 CHECKS = {

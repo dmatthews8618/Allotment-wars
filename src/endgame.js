@@ -28,6 +28,11 @@ function endGame(win) {
   $('#st-comp').textContent = G.stats.harvested.toLocaleString('en-GB');
   $('#st-kill').textContent = G.stats.killed;
   $('#st-lost').textContent = G.stats.lost;
+  $('#garden-result').textContent =
+    G.stats.gardensCaptured +
+    ' gardens claimed · ' +
+    G.stats.gardenIncome.toLocaleString('en-GB') +
+    ' bonus compost earned';
   document.body.classList.add('result-open');
   $('#over').dataset.result = win ? 'victory' : 'defeat';
   $('#result-seal').innerHTML = resultEmblem(win);

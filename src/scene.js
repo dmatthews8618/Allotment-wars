@@ -6,10 +6,20 @@ class Main extends Phaser.Scene {
   constructor() {
     super('main');
   }
+  preload() {
+    if (typeof BUILDING_ATLAS_DATA !== 'undefined' && !this.textures.exists('painted-buildings'))
+      this.load.image('painted-buildings', BUILDING_ATLAS_DATA);
+    if (typeof UNIT_ATLAS_DATA !== 'undefined' && !this.textures.exists('painted-units'))
+      this.load.image('painted-units', UNIT_ATLAS_DATA);
+    if (typeof UNIT_DIRECTIONS_DATA !== 'undefined' && !this.textures.exists('painted-unit-directions'))
+      this.load.image('painted-unit-directions', UNIT_DIRECTIONS_DATA);
+    if (typeof GARDEN_ATLAS_DATA !== 'undefined' && !this.textures.exists('painted-garden'))
+      this.load.image('painted-garden', GARDEN_ATLAS_DATA);
+  }
   create(data) {
     S = this;
     const D = DIFF[data.diff || 'standard'];
-    const seed = (Math.random() * 1e9) | 0;
+    const seed = Number.isInteger(data.seed) ? data.seed >>> 0 : (Math.random() * 1e9) | 0;
     const M = genMap(seed);
     G = {
       D,
@@ -18,6 +28,21 @@ class Main extends Phaser.Scene {
       terr: M.terr,
       heaps: M.heaps,
       heapAt: M.heapAt,
+      gardens: M.gardens.map(g => ({
+        ...g,
+        x: (g.tx + 0.5) * T,
+        y: (g.ty + 0.5) * T,
+        owner: -1,
+        knownOwner: -1,
+        claimant: -1,
+        progress: 0,
+        contested: false,
+        incomeT: 0,
+        seen: false,
+      })),
+      gardenAt: new Uint8Array(MW * MH),
+      playerStart: M.playerStart,
+      enemyStart: M.enemyStart,
       blocked: new Uint8Array(MW * MH),
       bldAt: new Int32Array(MW * MH),
       vis: new Uint8Array(MW * MH),
@@ -49,24 +74,24 @@ class Main extends Phaser.Scene {
       endT: 1,
       uiT: 0,
       miniT: 0,
-      stats: { harvested: 0, killed: 0, lost: 0 },
+      stats: { harvested: 0, killed: 0, lost: 0, gardenIncome: 0, gardensCaptured: 0 },
       ai: {
         tick: 2,
         waveT: D.first,
         waveN: 0,
-        layout: [...TEMPLATE, ...(D.defences ? DEF_TEMPLATE : [])].map(([k, x, y]) => {
-          const d = BLDS[k];
-          return [k, MW - x - d.w, MH - y - d.h];
-        }),
+        layout: M.enemyLayout.filter(([kind]) => D.defences || !DEF_TEMPLATE.some(([k]) => k === kind)),
       },
       headless: !!data.headless,
       started: false,
     };
     for (let i = 0; i < MW * MH; i++) G.blocked[i] = G.terr[i] === 2 || G.terr[i] === 3 ? 1 : 0;
+    for (const g of G.gardens)
+      for (let y = g.ty - 3; y <= g.ty + 3; y++)
+        for (let x = g.tx - 3; x <= g.tx + 3; x++) G.gardenAt[idx(x, y)] = g.id + 1;
     makeTextures();
     if (!G.headless) {
       drawTerrain();
-      this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(0);
+      this.terrain = this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(0);
     }
     const HR = mulberry32(seed ^ 99);
     for (const h of G.heaps)
@@ -86,13 +111,8 @@ class Main extends Phaser.Scene {
     G.miniCv.height = MH;
     G.miniCtx = G.miniCv.getContext('2d');
     G.miniImg = G.miniCtx.createImageData(MW, MH);
-    addBuilding(0, 'hq', 5, 38, false);
-    for (const [x, y] of [
-      [10, 44],
-      [11, 44],
-      [12, 44],
-    ])
-      addUnit(0, 'fork', x * T + T / 2, y * T + T / 2);
+    addBuilding(0, 'hq', M.playerStart.x, M.playerStart.y, false);
+    for (const [x, y] of PLAYER_TROOPS) addUnit(0, 'fork', x * T + T / 2, y * T + T / 2);
     for (const [k, x, y] of G.ai.layout) {
       if (DEF_TEMPLATE.some(d => d[0] === k)) continue;
       addBuilding(1, k, x, y, false);
@@ -104,8 +124,7 @@ class Main extends Phaser.Scene {
       const b = addUnit(1, 'barrow', t[0] * T + T / 2, t[1] * T + T / 2);
       b.hs = 'seek';
     }
-    const ehq = G.ents.find(e => e.team === 1 && e.kind === 'hq');
-    const ft = freeTilesAround(ehq.tx - 2, ehq.ty + 5, D.extra.length);
+    const ft = freeTilesAround(M.enemyExit[0], M.enemyExit[1], D.extra.length);
     D.extra.forEach((k, i) => {
       const t = ft[i];
       if (t) addUnit(1, k, t[0] * T + T / 2, t[1] * T + T / 2);
@@ -121,7 +140,7 @@ class Main extends Phaser.Scene {
         ? 0.85
         : 1
     );
-    centreOn(6.5 * T, 39.5 * T + 60);
+    centreOn((M.playerStart.x + 1.5) * T, (M.playerStart.y + 1.5) * T + 60);
     this.selg = this.add.graphics().setDepth(2.95);
     this.ov = this.add.graphics().setDepth(7);
     this.ghost = this.add
@@ -132,6 +151,7 @@ class Main extends Phaser.Scene {
       .setScale(1 / RES);
     this.rallyImg = this.add.image(0, 0, 'rally_0').setOrigin(0.15, 0.95).setVisible(false).setDepth(6.6);
     initAmbience(this);
+    initGardenArt(this);
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.mouse.disableContextMenu();
     this.drag = null;
@@ -317,6 +337,8 @@ class Main extends Phaser.Scene {
     }
   }
   render(dt) {
+    renderDaylight(this, dt);
+    renderGardens(this);
     const now = performance.now();
     for (const e of G.ents) {
       if (e.dead) continue;
@@ -338,13 +360,11 @@ class Main extends Phaser.Scene {
             : e.kind === 'cata' && e.fireT > 0
               ? 'catafire'
               : e.kind;
-        const key = `${base}_${e.team}_${e.frame}`;
+        const key = `${base}_${e.team}_${e.frame}${unitDirectionSuffix(e)}`;
         if (e.spr.texture.key !== key) e.spr.setTexture(key);
         const bob = moved && e.d.armor === 'inf' ? Math.sin(e.animT * 22) * 0.6 : 0;
-        e.spr
-          .setPosition(e.x, e.y + bob)
-          .setRotation(e.ang)
-          .setDepth(3 + e.y / 1e5);
+        e.spr.setPosition(e.x, e.y + bob).setDepth(3 + e.y / 1e5);
+        applyUnitFacing(e);
         e.sh.setPosition(e.x + 2, e.y + 4);
       } else if (e.d.gate) {
         let open = false;
@@ -359,7 +379,20 @@ class Main extends Phaser.Scene {
             open = true;
             break;
           }
-        const key = `gate_${e.team}_${open ? 1 : 0}`;
+        let key = `gate_${e.team}_${open ? 1 : 0}`;
+        if (gardenArt) {
+          const target = open ? 1 : 0;
+          e.gatePhase = GARDEN_MOTION.matches
+            ? target
+            : clamp((e.gatePhase || 0) + ((open ? 1 : -1) * dt) / 0.22, 0, 1);
+          const frame = Math.round(e.gatePhase * 4);
+          key =
+            frame === 0
+              ? `gate_${e.team}_0`
+              : frame === 4
+                ? `gate_${e.team}_1`
+                : `gate_${e.team}_step${frame}`;
+        }
         if (e.spr.texture.key !== key) e.spr.setTexture(key);
       }
       if ((e.flashUntil || 0) > now) {
@@ -373,8 +406,10 @@ class Main extends Phaser.Scene {
           e.spr.setTint(0xa8d8f0);
           e.tint = 's';
         }
-      } else if (e.tint) {
-        e.spr.clearTint();
+      } else {
+        // Keep combat flashes and soaked units distinct from ambient lighting.
+        if (e.bld && this.daylight) e.spr.setTint(this.daylight.buildings);
+        else if (e.tint) e.spr.clearTint();
         e.tint = null;
       }
       if (e.bld && !e.d.wall && dt > 0) {
@@ -444,7 +479,7 @@ class Main extends Phaser.Scene {
         sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 8, e.d.r * 1.3 + 7);
         sg.lineStyle(1.5, col, 0.95);
         sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
-        if (e.hp < e.maxHp) bar(e, 20, e.y - e.d.r - 9);
+        if (e.hp < e.maxHp) bar(e, 20, unitHealthY(e));
         if (e.d.harv && e.load > 0) {
           g.fillStyle(0x140f0b, 0.85);
           g.fillRect(e.x - 11, e.y + e.d.r + 4, 22, 4);
@@ -473,7 +508,7 @@ class Main extends Phaser.Scene {
     for (const e of G.ents) {
       if (e.dead || G.sel.includes(e) || e.hp >= e.maxHp) continue;
       if (e.team === 1 && !(e.bld ? visibleToPlayer(e) : e.spr.visible)) continue;
-      if (e.unit) bar(e, 20, e.y - e.d.r - 9);
+      if (e.unit) bar(e, 20, unitHealthY(e));
       else bar(e, Math.max(20, e.w * T * 0.7), e.ty * T - 6);
     }
     const sb = selBld();
@@ -592,6 +627,7 @@ function tick(dt) {
     } else if (e.d.range) updTurret(e, dt);
   }
   separate();
+  updGardens(dt);
   updProj(dt);
   updProduction(dt);
   updAI(dt);

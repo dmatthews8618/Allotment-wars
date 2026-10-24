@@ -20,7 +20,7 @@
         <div id="stage">
           <div class="field-label" aria-hidden="true">
             <span class="field-dot"></span> THE ALLOTMENTS
-            <span>Defend your plot. Flatten their buildings.</span>
+            <span>Scout the map. Destroy every enemy building.</span>
           </div>
           <div id="msg" class="msg" role="status" aria-live="polite"></div>
           <div class="hud-top">
@@ -92,6 +92,9 @@
               <b>Box</b> grabs a group, <b>All</b> selects every troop, double-tap a unit to grab all of that
               kind. Turn the phone sideways for more battlefield.
             </div>
+            <p class="garden-tip">
+              Scout for community gardens. Hold their flags with fighting units to earn extra compost.
+            </p>
             <details class="mini-keys desk">
               <summary>New to the allotment? Your first three steps</summary>
               <div class="first-steps">
@@ -116,6 +119,7 @@
               <div><b id="st-kill">0</b><span>Flattened</span></div>
               <div><b id="st-lost">0</b><span>Lost</span></div>
             </div>
+            <p id="garden-result" class="garden-result"></p>
             <div class="row">
               <button class="btn" id="again" type="button">Play again</button
               ><button class="btn ghost" id="menu" type="button">Change difficulty</button>
@@ -158,6 +162,14 @@
         <div id="slot-mini">
           <div class="map-label"><span>Field map</span><span>N ↑</span></div>
           <canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas>
+          <button
+            id="garden-status"
+            class="garden-status"
+            type="button"
+            title="Scout for community gardens. Hold one with fighting units for 12 seconds to earn 75 compost every 30 seconds."
+          >
+            Gardens 0/3 · +0/min
+          </button>
         </div>
         <section>
           <h2>Build</h2>
@@ -214,11 +226,19 @@
     <script src="src/config.js"></script>
     <script src="src/map.js"></script>
     <script src="src/art.js"></script>
+    <script src="src/building-atlas-data.js"></script>
+    <script src="src/building-art.js"></script>
+    <script src="src/unit-atlas-data.js"></script>
+    <script src="src/unit-directions-data.js"></script>
+    <script src="src/unit-art.js"></script>
+    <script src="src/garden-atlas-data.js"></script>
+    <script src="src/garden-art.js"></script>
     <script src="src/entities.js"></script>
     <script src="src/pathfinding.js"></script>
     <script src="src/units.js"></script>
     <script src="src/combat.js"></script>
     <script src="src/economy.js"></script>
+    <script src="src/objectives.js"></script>
     <script src="src/ai.js"></script>
     <script src="src/vision.js"></script>
     <script src="src/endgame.js"></script>

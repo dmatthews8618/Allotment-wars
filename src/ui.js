@@ -179,6 +179,13 @@ function uiTick() {
   G.shown += (G.money[0] - G.shown) * 0.35;
   if (Math.abs(G.money[0] - G.shown) < 1) G.shown = G.money[0];
   $('#money').textContent = Math.round(G.shown).toLocaleString('en-GB');
+  const gardens = G.gardens.filter(g => g.owner === 0);
+  $('#garden-status').textContent =
+    'Gardens ' +
+    gardens.length +
+    '/3 · +' +
+    gardens.filter(g => !g.contested && !g.progress).length * 150 +
+    '/min';
   const pw = G.power[0];
   $('#wtext').textContent = pw.used + ' / ' + pw.made;
   $('#wfill').style.width = (pw.made ? Math.min(100, (pw.used / pw.made) * 100) : 100) + '%';
@@ -267,8 +274,15 @@ function uiTick() {
       .map(([n, v]) => v + ' × ' + n)
       .join('<br>')}</p><p>Click the ground to move, an enemy to attack. A then click to attack-move.</p>`;
   } else {
-    key = 'none';
-    html = '<p>Select something to see it here. Drag across your troops to grab a group.</p>';
+    const g = G.focusGarden != null ? G.gardens[G.focusGarden] : null;
+    if (g && g.seen) {
+      const status = gardenStatus(g);
+      key = 'garden:' + g.id + ':' + status;
+      html = `<span class="side p">Community garden</span><span class="nm">${g.name}</span><p>${status}</p><p>Move fighting units inside the circle and hold it for 12 seconds. Up to three troops capture faster. Wheelbarrows cannot capture.</p><p>Earn 75 compost every 30 seconds while secure. Enemy troops pause the income. Click the garden with troops selected to send them there.</p>`;
+    } else {
+      key = 'none';
+      html = '<p>Select something to see it here. Drag across your troops to grab a group.</p>';
+    }
   }
   if (key !== infoKey) {
     infoKey = key;
@@ -294,6 +308,8 @@ function uiTick() {
         (sel[0].d.harv ? ' · ' + sel[0].load + ' compost' : '') +
         (sel[0].repairing ? ' · repairing' : '');
     else if (sel.length > 1) t = sel.length + ' selected · tap to move or attack';
+    else if (G.focusGarden != null && G.gardens[G.focusGarden].seen)
+      t = G.gardens[G.focusGarden].name + ' · ' + gardenStatus(G.gardens[G.focusGarden]);
     chip.hidden = !t;
     if (chip.textContent !== t) chip.textContent = t;
     // Only the commands that make sense right now: nothing selected, troops, a building, or mid-action.
@@ -325,12 +341,12 @@ function uiTick() {
   }
 }
 const MINI_COL = {
-  0: [77, 122, 51],
-  1: [163, 147, 111],
-  2: [55, 122, 160],
-  3: [34, 66, 29],
-  4: [91, 61, 37],
-  5: [100, 164, 72],
+  0: [76, 114, 62],
+  1: [169, 146, 100],
+  2: [67, 118, 115],
+  3: [41, 75, 37],
+  4: [83, 58, 37],
+  5: [128, 147, 78],
 };
 function drawMini() {
   const cv = $('#mini'),
@@ -366,6 +382,20 @@ function drawMini() {
   G.miniCtx.putImageData(img, 0, 0);
   c.imageSmoothingEnabled = false;
   c.drawImage(G.miniCv, 0, 0, cv.width, cv.height);
+  for (const g of G.gardens) {
+    if (!g.seen) continue;
+    const owner = gardenVisible(g) || g.owner === 0 ? g.owner : g.knownOwner;
+    const x = (g.x / WW) * cv.width,
+      y = (g.y / WH) * cv.height;
+    c.save();
+    c.translate(x, y);
+    c.rotate(Math.PI / 4);
+    c.fillStyle = '#17271d';
+    c.fillRect(-3.5, -3.5, 7, 7);
+    c.fillStyle = owner === 0 ? '#9fd0ff' : owner === 1 ? '#f4a493' : '#e5d28c';
+    c.fillRect(-2.5, -2.5, 5, 5);
+    c.restore();
+  }
   const cam = S.cameras.main,
     sx = cv.width / WW;
   c.strokeStyle = '#f0e3c2';

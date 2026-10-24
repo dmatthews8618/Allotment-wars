@@ -159,6 +159,7 @@ function addUnit(team, kind, x, y) {
     .setDepth(3)
     .setRotation(e.ang)
     .setScale(1 / RES);
+  applyUnitFacing(e);
   G.ents.push(e);
   return e;
 }
