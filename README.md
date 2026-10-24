@@ -75,7 +75,8 @@ tools/
   build.py        bundles everything into one file for the claude.ai version
   checks.py       set-piece tests of the game's rules
   playtest.py     plays fixed-seed matches in a hidden browser to check balance
-  harness.py      shared set-up for those two
+  screens.py      screenshots on desktop and emulated phones, plus touch-control tests
+  harness.py      shared set-up for the test tools
 ```
 
 The scripts load in the order listed in `index.html` and share their top-level names, so that order matters.
@@ -97,6 +98,8 @@ python3 tools/playtest.py
 
 `playtest.py` plays fixed-seed matches on each difficulty with a simple scripted player. It must win every Gentle match and lose every Ruthless one; Standard is reported but not enforced. The same seed always plays out the same way, so a failure can be replayed.
 
-Both fail if the game throws any errors.
+`screens.py` saves desktop, phone-upright and phone-sideways screenshots of the same battle to `screens/`, and tests the touch controls on a high-density phone screen.
+
+All of them fail if the game throws any errors.
 
 To refresh the single-file version used on claude.ai, run `python3 tools/build.py` and publish `dist/allotment-wars.html`.

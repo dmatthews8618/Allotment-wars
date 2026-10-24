@@ -8,8 +8,12 @@ const T = 32,
   WW = MW * T,
   WH = MH * T,
   CAP = 300;
+// Screen sharpness: the game renders at the device's pixel density (capped at 2 to keep phones fast),
+// and unit and building sprites are drawn at double resolution so they stay crisp when zoomed.
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const RES = 2;
 const TEAM = [
-  { main: '#6aa83f', dark: '#3e6a24', light: '#b8e383', sel: 0xb8e383, name: 'Plot Holders' },
+  { main: '#3d7cc9', dark: '#22508a', light: '#a5cdf5', sel: 0x9fd0ff, name: 'Plot Holders' },
   { main: '#c9493d', dark: '#7d2620', light: '#f4a493', sel: 0xf4a493, name: 'Tidy Lawns Society' },
 ];
 

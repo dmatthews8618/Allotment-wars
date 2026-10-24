@@ -75,12 +75,32 @@ const MQ = window.matchMedia('(max-width:760px),(max-height:540px)');
 let curTab = 'build';
 function setTab(t) {
   curTab = t;
-  for (const b of document.querySelectorAll('.tab')) b.classList.toggle('on', b.dataset.tab === t);
+  for (const b of document.querySelectorAll('.tab[data-tab]')) b.classList.toggle('on', b.dataset.tab === t);
   if (document.body.classList.contains('compact')) {
     $('#build').hidden = t !== 'build';
     $('#train').hidden = t !== 'train';
     $('#upg').hidden = t !== 'upg';
+    $('#build').scrollLeft = $('#train').scrollLeft = $('#upg').scrollLeft = 0;
+    updateScrollCue();
   }
+}
+// Fade and arrow at the edge of the card strip while there are more cards to scroll to.
+function updateScrollCue() {
+  const el = $('#' + curTab);
+  const more =
+    el &&
+    (el.scrollWidth - el.clientWidth - el.scrollLeft > 4 ||
+      el.scrollHeight - el.clientHeight - el.scrollTop > 4);
+  $('#tray-slot').classList.toggle('more', !!more);
+}
+for (const id of ['build', 'train', 'upg'])
+  $('#' + id).addEventListener('scroll', updateScrollCue, { passive: true });
+window.addEventListener('resize', updateScrollCue);
+function setPanelOpen(open) {
+  $('#panel').classList.toggle('shut', !open);
+  $('#tray-toggle').textContent = open ? 'Hide' : 'Show';
+  $('#tray-toggle').setAttribute('aria-expanded', String(open));
+  updateScrollCue();
 }
 function layout() {
   const c = MQ.matches;
@@ -100,26 +120,18 @@ function layout() {
     $('#train').hidden = false;
     $('#upg').hidden = false;
   }
-  if (game && game.scale)
-    setTimeout(() => {
-      game.scale.refresh();
-      setCamBounds();
-    }, 30);
+  if (S) setTimeout(setCamBounds, 30);
 }
 if (MQ.addEventListener) MQ.addEventListener('change', layout);
 else MQ.addListener(layout);
 layout();
-for (const b of document.querySelectorAll('.tab'))
+for (const b of document.querySelectorAll('.tab[data-tab]'))
   b.addEventListener('click', () => {
-    const tr = $('#tray');
-    if (b.dataset.tab === curTab && !tr.classList.contains('shut')) {
-      tr.classList.add('shut');
-    } else {
-      tr.classList.remove('shut');
-      setTab(b.dataset.tab);
-    }
+    setTab(b.dataset.tab);
+    setPanelOpen(true);
     b.blur();
   });
+$('#tray-toggle').addEventListener('click', () => setPanelOpen($('#panel').classList.contains('shut')));
 for (const b of document.querySelectorAll('[data-cmd]'))
   b.addEventListener('click', () => {
     cmd(b.dataset.cmd);
@@ -142,14 +154,32 @@ $('#menu').addEventListener('click', () => {
   $('#over').hidden = true;
   $('#brief').hidden = false;
 });
+// The canvas has DPR device pixels per screen point, so it stays sharp on phones; Phaser's zoom shrinks it back to fit.
+const stageSize = () => {
+  const r = $('#stage').getBoundingClientRect();
+  return [Math.max(2, Math.round(r.width * DPR)), Math.max(2, Math.round(r.height * DPR))];
+};
+const [stageW, stageH] = stageSize();
 game = new Phaser.Game({
   type: Phaser.AUTO,
-  parent: 'game',
+  parent: 'stage',
   backgroundColor: '#0c0907',
-  scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' },
+  scale: { mode: Phaser.Scale.NONE, width: stageW, height: stageH, zoom: 1 / DPR },
   render: { antialias: true },
   banner: false,
   input: { mouse: { preventDefaultWheel: true } },
 });
+function fitStage() {
+  if (!game.isBooted) return;
+  const [w, h] = stageSize();
+  if (game.scale.width !== w || game.scale.height !== h) {
+    game.scale.resize(w, h);
+    if (S) setCamBounds();
+  }
+  updateScrollCue();
+}
+// Resize whenever the stage changes size, and once Phaser has finished starting (it may miss earlier changes).
+new ResizeObserver(fitStage).observe($('#stage'));
+game.events.once('ready', fitStage);
 window.__AWstart = start;
 window.__AWadd = (t, k, x, y) => addUnit(t, k, x, y);

@@ -120,7 +120,8 @@ function placeAt(kind, tx, ty) {
   announce(d.names[0] + ' planted');
   return true;
 }
-function leftClick(wx, wy, shift, touch) {
+// time: when the tap happened (event time), so double-taps are still recognised if a frame runs slow.
+function leftClick(wx, wy, shift, touch, time) {
   if (G.placing === 'wall') {
     wallClick(wx, wy);
     return;
@@ -132,8 +133,8 @@ function leftClick(wx, wy, shift, touch) {
   }
   const tx = tileOf(wx),
     ty = tileOf(wy);
-  const ent = pick(wx, wy, touch ? 14 / S.cameras.main.zoom : 0);
-  const now = performance.now();
+  const ent = pick(wx, wy, touch ? 14 / viewZoom() : 0);
+  const now = time ?? performance.now();
   if (
     ent &&
     ent.team === 0 &&
@@ -285,10 +286,15 @@ function touchPlace(wx, wy) {
 function centreOn(x, y) {
   S.cameras.main.centerOn(x, y);
 }
+// Camera zoom as the player sees it: 1 = normal size, whatever the screen's pixel density.
+const viewZoom = () => S.cameras.main.zoom / DPR;
+function zoomTo(z) {
+  S.cameras.main.setZoom(clamp(z, 0.5, 1.8) * DPR);
+}
 function setCamBounds() {
   if (!S) return;
   const c = S.cameras.main;
-  if (document.body.classList.contains('compact')) c.setBounds(-60, -70, WW + 120, WH + 70 + 190);
+  if (document.body.classList.contains('compact')) c.setBounds(-60, -90, WW + 120, WH + 150);
   else c.setBounds(0, 0, WW, WH);
 }
 function stopSel() {
@@ -348,7 +354,10 @@ function cmd(c) {
   else if (c === 'stop') stopSel();
   else if (c === 'home') goHome();
   else if (c === 'cancel') cancelAll();
-  else if (c === 'repair') doRepair();
+  else if (c === 'deselect') {
+    G.sel = [];
+    G.sellArm = null;
+  } else if (c === 'repair') doRepair();
   else if (c === 'sell') doSell();
   uiTick();
 }

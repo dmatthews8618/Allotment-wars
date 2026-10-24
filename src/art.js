@@ -47,15 +47,55 @@ function soft(c, fn, blur, ox, oy) {
   fn();
   c.restore();
 }
-function mkTex(key, w, h, fn) {
+// Draws a texture with canvas code. res > 1 draws it at higher resolution; sprites using it are scaled by 1/res.
+function mkTex(key, w, h, fn, res = 1) {
   if (S.textures.exists(key)) return;
   const cv = document.createElement('canvas');
-  cv.width = w;
-  cv.height = h;
+  cv.width = w * res;
+  cv.height = h * res;
   const c = cv.getContext('2d');
+  c.scale(res, res);
   fn(c, w, h);
   S.textures.addCanvas(key, cv);
   ICONS[key] = cv;
+}
+// Wraps a unit drawing so it gets a dark outline, which keeps small troops readable on grass.
+function outlined(draw) {
+  return (c, W, H) => {
+    const cw = c.canvas.width,
+      ch = c.canvas.height,
+      k = cw / W;
+    const s = document.createElement('canvas');
+    s.width = cw;
+    s.height = ch;
+    const sc = s.getContext('2d');
+    sc.scale(k, k);
+    draw(sc, W, H);
+    const m = document.createElement('canvas');
+    m.width = cw;
+    m.height = ch;
+    const mc = m.getContext('2d');
+    mc.drawImage(s, 0, 0);
+    mc.globalCompositeOperation = 'source-in';
+    mc.fillStyle = 'rgba(16,12,8,.9)';
+    mc.fillRect(0, 0, cw, ch);
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    const o = 1.3 * k;
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+      [0.7, 0.7],
+      [-0.7, 0.7],
+      [0.7, -0.7],
+      [-0.7, -0.7],
+    ])
+      c.drawImage(m, dx * o, dy * o);
+    c.drawImage(s, 0, 0);
+    c.restore();
+  };
 }
 function shade(hex, amt) {
   const n = parseInt(hex.slice(1), 16);
@@ -72,75 +112,110 @@ function shade(hex, amt) {
 
 const DRAW = {
   hq(c, W, H, C, team) {
+    // A pitched-roof shed seen from above, with a porch at the front.
+    const top = 6,
+      ridge = 38,
+      eave = 70,
+      L = 8,
+      Rt = W - 8;
+    const deck = team ? '#f1ede2' : '#9a6f40';
+    soft(
+      c,
+      () => {
+        c.fillStyle = deck;
+        c.fillRect(24, eave - 2, 48, 22);
+      },
+      4,
+      2,
+      3
+    );
+    c.fillStyle = team ? 'rgba(0,0,0,.1)' : 'rgba(40,25,10,.45)';
+    for (let x = 29; x < 72; x += 6) c.fillRect(x, eave, 1, 20);
     soft(
       c,
       () => {
         c.fillStyle = C.dark;
-        rr(c, 6, 7, W - 14, H - 16, 5);
-        c.fill();
+        c.fillRect(L, top, Rt - L, eave - top);
       },
       9,
       4,
       5
     );
-    c.fillStyle = lin(c, 0, 7, 0, H / 2, [shade(C.main, 0.25), C.main]);
-    rr(c, 6, 7, W - 14, H / 2 - 7, [5, 5, 0, 0]);
-    c.fill();
-    c.fillStyle = lin(c, 0, H / 2, 0, H - 9, [shade(C.main, -0.25), shade(C.main, -0.45)]);
-    c.fillRect(6, H / 2, W - 14, H / 2 - 12);
-    c.strokeStyle = 'rgba(0,0,0,.16)';
-    c.lineWidth = 1;
-    for (let y = 13; y < H - 12; y += 6) {
-      if (Math.abs(y - H / 2) < 3) continue;
-      c.beginPath();
-      c.moveTo(8, y + 0.5);
-      c.lineTo(W - 10, y + 0.5);
-      c.stroke();
+    c.fillStyle = lin(c, 0, top, 0, ridge, [shade(C.main, 0.25), shade(C.main, 0.06)]);
+    c.fillRect(L, top, Rt - L, ridge - top);
+    c.fillStyle = lin(c, 0, ridge, 0, eave, [shade(C.main, -0.3), shade(C.main, -0.45)]);
+    c.fillRect(L, ridge, Rt - L, eave - ridge);
+    for (let y = top + 6, row = 0; y < eave - 2; y += 7, row++) {
+      if (Math.abs(y - ridge) < 4) continue;
+      c.fillStyle = 'rgba(0,0,0,.2)';
+      c.fillRect(L, y, Rt - L, 1.2);
+      c.fillStyle = 'rgba(0,0,0,.12)';
+      for (let x = L + (row % 2 ? 6 : 0); x < Rt; x += 12) c.fillRect(x, y - 6, 1, 6);
     }
-    c.strokeStyle = 'rgba(255,255,255,.08)';
-    for (let x = 18; x < W - 10; x += 12) {
+    c.fillStyle = shade(C.dark, -0.25);
+    c.fillRect(L - 1, ridge - 3, Rt - L + 2, 6);
+    c.fillStyle = 'rgba(255,255,255,.2)';
+    c.fillRect(L - 1, ridge - 3, Rt - L + 2, 1.5);
+    c.strokeStyle = shade(C.dark, -0.5);
+    c.lineWidth = 2;
+    c.strokeRect(L, top, Rt - L, eave - top);
+    c.fillStyle = '#9a9a94';
+    c.fillRect(L - 1, eave - 1, Rt - L + 2, 3);
+    if (!team) {
+      c.fillStyle = 'rgba(185,225,245,.9)';
+      c.fillRect(20, 14, 20, 14);
+      c.fillStyle = 'rgba(255,255,255,.65)';
+      c.fillRect(20, 14, 20, 3);
+      c.strokeStyle = '#26282a';
+      c.lineWidth = 1.5;
+      c.strokeRect(20, 14, 20, 14);
+      line(c, 30, 14, 30, 28, '#26282a', 1);
+      soft(c, () => circ(c, Rt - 16, ridge + 14, 4.5, '#77736c'), 3, 1, 2);
+      circ(c, Rt - 16, ridge + 14, 2.8, '#33302b');
+      line(c, Rt - 3, eave, Rt - 1, eave + 6, '#9a9a94', 2);
+      soft(c, () => circ(c, Rt - 1, eave + 13, 7, '#2d3a24'), 3, 1, 2);
+      circ(c, Rt - 1, eave + 13, 5, '#2a5d78');
+      ell(c, Rt - 3, eave + 11, 2, 1.2, 'rgba(220,245,255,.5)');
+      for (const [px, py, f] of [
+        [16, eave + 12, '#4f9a35'],
+        [9, eave + 20, '#e8892b'],
+      ]) {
+        soft(c, () => circ(c, px, py, 5, '#b5603a'), 2, 1, 1);
+        circ(c, px, py, 3.6, '#4a3424');
+        circ(c, px, py, 2.6, f);
+      }
+      c.fillStyle = '#7d6b3c';
+      c.fillRect(40, eave + 6, 16, 9);
+      line(c, 76, eave + 2, 84, eave + 17, '#b08a5a', 2);
+      c.save();
+      c.translate(85, eave + 19);
+      c.rotate(-0.5);
+      c.fillStyle = '#9ea3a6';
+      rr(c, -3.5, -2, 7, 8, 1.5);
+      c.fill();
+      c.restore();
+    } else {
+      c.fillStyle = 'rgba(255,255,255,.18)';
+      for (let y = top + 3; y < eave; y += 7) for (let x = L + 3; x < Rt - 2; x += 6) c.fillRect(x, y, 3, 1);
+      line(c, 76, eave + 18, 76, eave - 14, '#f4f1e8', 1.6);
       c.beginPath();
-      c.moveTo(x, 8);
-      c.lineTo(x, H - 11);
-      c.stroke();
-    }
-    line(c, 7, H / 2, W - 9, H / 2, shade(C.light, 0.2), 3.5);
-    c.fillStyle = 'rgba(185,225,245,.85)';
-    c.fillRect(20, 16, 22, 12);
-    c.fillStyle = 'rgba(255,255,255,.6)';
-    c.fillRect(20, 16, 22, 3);
-    c.strokeStyle = shade(C.dark, -0.3);
-    c.lineWidth = 1.5;
-    c.strokeRect(20, 16, 22, 12);
-    soft(
-      c,
-      () => {
-        c.fillStyle = '#8a8580';
-        c.fillRect(W - 31, 13, 10, 12);
-      },
-      3,
-      1,
-      2
-    );
-    c.fillStyle = '#3e3b38';
-    c.fillRect(W - 29, 15, 6, 8);
-    c.strokeStyle = team ? '#f4efe4' : '#3a2a1c';
-    c.lineWidth = 2.5;
-    rr(c, 6, 7, W - 14, H - 16, 5);
-    c.stroke();
-    if (team) {
-      c.fillStyle = '#f4efe4';
-      rr(c, W / 2 - 14, H / 2 + 9, 28, 12, 2);
+      c.moveTo(77, eave - 14);
+      c.lineTo(90, eave - 10);
+      c.lineTo(77, eave - 6);
+      c.closePath();
+      c.fillStyle = C.main;
+      c.fill();
+      c.fillStyle = '#ffffff';
+      rr(c, 36, eave + 5, 24, 10, 2);
       c.fill();
       c.fillStyle = C.dark;
-      c.font = 'bold 9px sans-serif';
+      c.font = 'bold 7.5px sans-serif';
       c.textAlign = 'center';
-      c.fillText('T.L.S.', W / 2, H / 2 + 18);
-    } else {
-      circ(c, 20, H / 2 + 15, 6.5, rad(c, 20, H / 2 + 15, 6.5, ['#f5a64a', '#c96a1d'], 18, H / 2 + 12));
-      circ(c, 20, H / 2 + 9, 1.8, '#4c7a2a');
-      circ(c, W - 24, H / 2 + 16, 5, '#f0c93a');
-      circ(c, W - 24, H / 2 + 16, 2.2, '#6b4a20');
+      c.fillText('T.L.S.', 48, eave + 12.5);
+      for (const bx of [28, 33]) {
+        circ(c, bx, eave + 15, 2.6, '#1d1d1d');
+        circ(c, bx - 0.8, eave + 14.2, 0.8, '#888');
+      }
     }
   },
   water(c, W, H, C) {
@@ -177,50 +252,76 @@ const DRAW = {
     c.fillStyle = C.light;
     c.fillRect(x + 27, y - 4, 3, 8);
   },
-  bin(c, W, H, C) {
-    soft(
-      c,
-      () => {
-        c.fillStyle = '#6a4a2b';
-        c.fillRect(4, 4, W - 8, H - 8);
-      },
-      8,
-      3,
-      4
-    );
-    for (let i = 0, x = 4; x < W - 4; i++, x += 8) {
-      c.fillStyle = lin(c, x, 0, x + 8, 0, [i % 2 ? '#8c6239' : '#7a5532', '#5e4126']);
-      c.fillRect(x, 4, Math.min(8, W - 4 - x), H - 8);
-    }
-    c.fillStyle = rad(c, W / 2, H / 2, W / 2, ['#4a3424', '#33241a']);
-    c.fillRect(11, 11, W - 22, H - 22);
+  bin(c, W, H, C, team) {
+    // Plot Holders: three black 'dalek' compost bins, one with its lid off. Tidy Lawns: wheelie bins of clippings.
     const R = mulberry32(7);
-    for (let i = 0; i < 70; i++) {
-      c.fillStyle = ['#d4813a', '#6e9a3c', '#a37b4f', '#57402a', '#c9b07a'][i % 5];
-      const s = 1 + R() * 2;
-      c.fillRect(12 + R() * (W - 26), 12 + R() * (H - 26), s, s);
+    ell(c, W / 2, H / 2 + 6, W / 2 - 4, H / 2 - 8, 'rgba(40,28,18,.35)');
+    for (let i = 0; i < 46; i++) {
+      c.fillStyle = team
+        ? ['#7fbf4a', '#5f9a3a', '#a9d36a'][i % 3]
+        : ['#5a3d26', '#4a3424', '#d4813a', '#6e9a3c'][i % 4];
+      const sz = 1 + R() * 2;
+      c.fillRect(6 + R() * (W - 12), 34 + R() * (H - 38), sz, sz);
     }
-    c.fillStyle = 'rgba(255,255,255,.12)';
-    c.fillRect(4, 4, W - 8, 2);
-    for (const [x, y] of [
-      [2, 2],
-      [W - 11, 2],
-      [2, H - 11],
-      [W - 11, H - 11],
-    ]) {
-      soft(
-        c,
-        () => {
-          c.fillStyle = C.main;
-          c.fillRect(x, y, 9, 9);
-        },
-        2,
-        1,
-        1
-      );
-      c.fillStyle = C.light;
-      c.fillRect(x, y, 9, 2);
-    }
+    const xs = [17, 48, 79],
+      y = 30;
+    xs.forEach((x, i) => {
+      if (!team) {
+        soft(c, () => circ(c, x, y, 14.5, '#161d15'), 5, 2, 3);
+        circ(c, x, y, 14.5, rad(c, x, y, 14.5, ['#3d4d3a', '#1d261c', '#111710'], x - 4, y - 5));
+        c.beginPath();
+        c.arc(x, y, 12.4, 0, Math.PI * 2);
+        c.strokeStyle = C.main;
+        c.lineWidth = 2.2;
+        c.stroke();
+        if (i === 1) {
+          circ(c, x, y, 10.5, rad(c, x, y, 10.5, ['#74513a', '#3d2a1c']));
+          for (let k = 0; k < 16; k++) {
+            c.fillStyle = ['#d4813a', '#78a542', '#e6c45a'][k % 3];
+            c.fillRect(x - 7 + R() * 14, y - 7 + R() * 14, 1.7, 1.7);
+          }
+        } else {
+          circ(c, x, y, 10, rad(c, x, y, 10, ['#4d6049', '#253022'], x - 3, y - 4));
+          c.beginPath();
+          c.arc(x, y, 6.5, 0, Math.PI * 2);
+          c.strokeStyle = 'rgba(0,0,0,.35)';
+          c.lineWidth = 1;
+          c.stroke();
+          rr(c, x - 6, y - 1.6, 12, 3.2, 1.6);
+          c.fillStyle = '#0e130d';
+          c.fill();
+          ell(c, x - 4, y - 5, 4, 2, 'rgba(255,255,255,.18)', -0.5);
+        }
+      } else {
+        const w = 24,
+          h = 28;
+        soft(
+          c,
+          () => {
+            rr(c, x - w / 2, y - h / 2, w, h, 3);
+            c.fillStyle = '#244d2a';
+            c.fill();
+          },
+          5,
+          2,
+          3
+        );
+        rr(c, x - w / 2, y - h / 2, w, h, 3);
+        c.fillStyle = '#2e6033';
+        c.fill();
+        rr(c, x - w / 2 + 1, y - h / 2 + 3, w - 2, h - 6, 2);
+        c.fillStyle = lin(c, 0, y - h / 2, 0, y + h / 2, [shade(C.main, 0.15), shade(C.main, -0.2)]);
+        c.fill();
+        c.fillStyle = 'rgba(0,0,0,.18)';
+        for (let k = -1; k <= 1; k++) c.fillRect(x - w / 2 + 3, y + k * 6, w - 6, 1.3);
+        c.fillStyle = '#1b1b1b';
+        c.fillRect(x - w / 2, y - h / 2, w, 3);
+        c.fillRect(x - w / 2 + 2, y - h / 2 - 3, 4, 3);
+        c.fillRect(x + w / 2 - 6, y - h / 2 - 3, 4, 3);
+        rr(c, x - 5, y + h / 2 - 4, 10, 3, 1.5);
+        c.fill();
+      }
+    });
   },
   shed(c, W, H, C) {
     soft(
@@ -736,18 +837,36 @@ function makeTextures() {
     for (const k in BLDS) {
       if (BLDS[k].wall) continue;
       const d = BLDS[k];
-      mkTex(k + '_' + team, d.w * T, d.h * T, (c, W, H) => DRAW[k](c, W, H, C, team));
+      mkTex(k + '_' + team, d.w * T, d.h * T, (c, W, H) => DRAW[k](c, W, H, C, team), RES);
     }
     for (const k in us)
       for (let f = 0; f < 2; f++)
-        mkTex(`${k}_${team}_${f}`, us[k], us[k], (c, W, H) => DRAW[k](c, W, H, C, team, f, false));
+        mkTex(
+          `${k}_${team}_${f}`,
+          us[k],
+          us[k],
+          outlined((c, W, H) => DRAW[k](c, W, H, C, team, f, false)),
+          RES
+        );
     for (let f = 0; f < 2; f++)
-      mkTex(`barrowfull_${team}_${f}`, 30, 30, (c, W, H) => DRAW.barrow(c, W, H, C, team, f, true));
+      mkTex(
+        `barrowfull_${team}_${f}`,
+        30,
+        30,
+        outlined((c, W, H) => DRAW.barrow(c, W, H, C, team, f, true)),
+        RES
+      );
     for (let f = 0; f < 2; f++)
-      mkTex(`catafire_${team}_${f}`, 34, 34, (c, W, H) => DRAW.cata(c, W, H, C, team, f, true));
-    mkTex('wall_' + team + '_10', 32, 32, c => drawWall(c, team, 10));
-    mkTex('gate_' + team + '_0', 32, 32, c => drawGate(c, team, false));
-    mkTex('gate_' + team + '_1', 32, 32, c => drawGate(c, team, true));
+      mkTex(
+        `catafire_${team}_${f}`,
+        34,
+        34,
+        outlined((c, W, H) => DRAW.cata(c, W, H, C, team, f, true)),
+        RES
+      );
+    mkTex('wall_' + team + '_10', 32, 32, c => drawWall(c, team, 10), RES);
+    mkTex('gate_' + team + '_0', 32, 32, c => drawGate(c, team, false), RES);
+    mkTex('gate_' + team + '_1', 32, 32, c => drawGate(c, team, true), RES);
     mkTex('rally_' + team, 16, 22, c => {
       line(c, 3, 21, 3, 3, '#e8dfc8', 2);
       c.beginPath();
@@ -836,19 +955,25 @@ function makeTextures() {
       ell(c, 8.2, 7, 2.4, 2, col);
       line(c, 6, 2, 6, 9, '#2a2118', 1.2);
     });
-  mkTex('heap', 40, 40, c => {
-    ell(c, 22, 26, 17, 11, 'rgba(0,0,0,.3)');
-    ell(c, 20, 22, 16, 12, rad(c, 20, 22, 16, ['#6a4a33', '#4a3424', '#33241a'], 16, 17));
-    ell(c, 18, 19, 9, 6, 'rgba(140,100,70,.35)');
-    const R = mulberry32(11);
-    for (let i = 0; i < 34; i++) {
-      c.fillStyle = ['#d4813a', '#78a542', '#a37b4f', '#e6c45a', '#c9b07a'][i % 5];
-      const s = 1 + R() * 1.6;
-      c.fillRect(8 + R() * 24, 12 + R() * 18, s, s);
-    }
-    line(c, 14, 16, 18, 13, '#78a542', 1.5);
-    line(c, 24, 20, 27, 17, '#d4813a', 1.5);
-  });
+  mkTex(
+    'heap',
+    40,
+    40,
+    c => {
+      ell(c, 22, 26, 17, 11, 'rgba(0,0,0,.3)');
+      ell(c, 20, 22, 16, 12, rad(c, 20, 22, 16, ['#6a4a33', '#4a3424', '#33241a'], 16, 17));
+      ell(c, 18, 19, 9, 6, 'rgba(140,100,70,.35)');
+      const R = mulberry32(11);
+      for (let i = 0; i < 34; i++) {
+        c.fillStyle = ['#d4813a', '#78a542', '#a37b4f', '#e6c45a', '#c9b07a'][i % 5];
+        const s = 1 + R() * 1.6;
+        c.fillRect(8 + R() * 24, 12 + R() * 18, s, s);
+      }
+      line(c, 14, 16, 18, 13, '#78a542', 1.5);
+      line(c, 24, 20, 27, 17, '#d4813a', 1.5);
+    },
+    RES
+  );
 }
 function wallMask(e) {
   let m = 0;
@@ -873,7 +998,7 @@ function refreshWall(e) {
   }
   const m = wallMask(e),
     key = `wall_${e.team}_${m}`;
-  mkTex(key, 32, 32, c => drawWall(c, e.team, m));
+  mkTex(key, 32, 32, c => drawWall(c, e.team, m), RES);
   e.spr.setTexture(key);
 }
 function refreshWallsAround(tx, ty) {
@@ -977,26 +1102,61 @@ function drawTerrain() {
           circ(x, cx, cy - 1.2, 1.6, '#8cc95a');
         }
   }
-  // paths
+  // paths: one continuous band joining neighbouring path tiles, with soft edges and gravel speckle
+  const pathSegs = [];
   for (let i = 0; i < MW * MH; i++) {
     if (terr[i] !== 1) continue;
-    circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.72, 'rgba(70,58,38,.35)');
+    const tx = i % MW,
+      ty = (i / MW) | 0;
+    pathSegs.push([tx, ty, tx, ty]);
+    for (const [dx, dy] of [
+      [1, 0],
+      [0, 1],
+      [1, 1],
+      [-1, 1],
+    ])
+      if (at(tx + dx, ty + dy) === 1) pathSegs.push([tx, ty, tx + dx, ty + dy]);
   }
-  for (let i = 0; i < MW * MH; i++) {
-    if (terr[i] !== 1) continue;
-    circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.64, '#a99872');
-  }
-  for (let i = 0; i < MW * MH; i++) {
-    if (terr[i] !== 1) continue;
-    const px = (i % MW) * T,
-      py = ((i / MW) | 0) * T;
-    for (let k = 0; k < 22; k++) {
+  const band = (ctx, width, colour) => {
+    ctx.beginPath();
+    for (const [x0, y0, x1, y1] of pathSegs) {
+      ctx.moveTo(x0 * T + T / 2, y0 * T + T / 2);
+      ctx.lineTo(x1 * T + T / 2 + 0.01, y1 * T + T / 2);
+    }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = width;
+    ctx.strokeStyle = colour;
+    ctx.stroke();
+  };
+  x.save();
+  x.shadowColor = 'rgba(60,48,30,.6)';
+  x.shadowBlur = 10;
+  band(x, T * 1.3, 'rgba(85,70,45,.35)');
+  x.restore();
+  const pc = document.createElement('canvas');
+  pc.width = WW;
+  pc.height = WH;
+  const p = pc.getContext('2d');
+  band(p, T * 1.12, '#a99872');
+  p.globalCompositeOperation = 'source-atop';
+  for (const [tx, ty, ex, ey] of pathSegs) {
+    if (tx !== ex || ty !== ey) continue;
+    for (let k = 0; k < 30; k++) {
       const v = R();
-      x.fillStyle = v < 0.4 ? '#8b7b5c' : v < 0.8 ? '#c4b48f' : '#e0d3b0';
-      const s = 1 + R() * 1.6;
-      x.fillRect(px + R() * T, py + R() * T, s, s);
+      p.fillStyle = v < 0.4 ? '#8b7b5c' : v < 0.8 ? '#c4b48f' : '#e0d3b0';
+      const sz = 1 + R() * 1.6;
+      p.fillRect(tx * T - 6 + R() * (T + 12), ty * T - 6 + R() * (T + 12), sz, sz);
     }
   }
+  p.lineWidth = 1;
+  p.strokeStyle = 'rgba(255,245,220,.12)';
+  band(p, T * 0.25, 'rgba(255,245,220,.10)');
+  x.save();
+  x.shadowColor = '#a99872';
+  x.shadowBlur = 3;
+  x.drawImage(pc, 0, 0);
+  x.restore();
   // ponds
   const ponds = [];
   for (let i = 0; i < MW * MH; i++) if (terr[i] === 2) ponds.push(i);

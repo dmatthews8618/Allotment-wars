@@ -17,7 +17,37 @@
   <body>
     <div id="app">
       <div id="game">
-        <div id="msg" class="msg" role="status" aria-live="polite"></div>
+        <div id="stage">
+          <div id="msg" class="msg" role="status" aria-live="polite"></div>
+          <div class="hud-top">
+            <div id="hud-res"></div>
+            <div id="selchip" class="selchip" hidden></div>
+          </div>
+          <div class="hud-mini">
+            <div id="hud-minislot"></div>
+            <button class="cmd small" type="button" data-cmd="pause">Pause</button>
+          </div>
+        </div>
+        <div id="panel">
+          <div class="cmds" id="cmds">
+            <button class="cmd" type="button" data-cmd="all" data-show="none units">All</button>
+            <button class="cmd" type="button" data-cmd="box" data-show="none units">Box</button>
+            <button class="cmd" type="button" data-cmd="amove" data-show="units">Attack</button>
+            <button class="cmd" type="button" data-cmd="stop" data-show="units">Stop</button>
+            <button class="cmd" type="button" data-cmd="repair" data-show="bld">Repair</button>
+            <button class="cmd" type="button" data-cmd="sell" data-show="bld">Sell</button>
+            <button class="cmd" type="button" data-cmd="home" data-show="none bld">Home</button>
+            <button class="cmd" type="button" data-cmd="deselect" data-show="units bld">Deselect</button>
+            <button class="cmd" type="button" data-cmd="cancel" data-show="mode">Cancel</button>
+          </div>
+          <div class="tabs">
+            <button class="tab on" type="button" data-tab="build">Build</button
+            ><button class="tab" type="button" data-tab="train">Train</button
+            ><button class="tab" type="button" data-tab="upg">Upgrade</button
+            ><button class="tab tab-toggle" id="tray-toggle" type="button" aria-expanded="true">Hide</button>
+          </div>
+          <div id="tray-slot"></div>
+        </div>
         <div id="brief" class="screen">
           <div class="card">
             <div class="kicker">Plot Holders v Tidy Lawns Society</div>
@@ -67,34 +97,6 @@
           </div>
         </div>
         <div id="paused" class="screen paused" hidden><div>Paused</div></div>
-        <div class="hud" id="hud">
-          <div class="hud-top">
-            <div id="hud-res"></div>
-            <div id="selchip" class="selchip" hidden></div>
-          </div>
-          <div class="hud-mini">
-            <div id="hud-minislot"></div>
-            <button class="cmd small" type="button" data-cmd="pause">Pause</button>
-          </div>
-          <div class="tray" id="tray">
-            <div class="tabs">
-              <button class="tab on" type="button" data-tab="build">Build</button
-              ><button class="tab" type="button" data-tab="train">Train</button
-              ><button class="tab" type="button" data-tab="upg">Upgrade</button>
-            </div>
-            <div id="tray-slot"></div>
-          </div>
-          <div class="cmds" id="cmds">
-            <button class="cmd unitcmd" type="button" data-cmd="all">All</button>
-            <button class="cmd unitcmd" type="button" data-cmd="box">Box</button>
-            <button class="cmd unitcmd" type="button" data-cmd="amove">Attack</button>
-            <button class="cmd unitcmd" type="button" data-cmd="stop">Stop</button>
-            <button class="cmd bldcmd" type="button" data-cmd="repair">Repair</button>
-            <button class="cmd bldcmd" type="button" data-cmd="sell">Sell</button>
-            <button class="cmd" type="button" data-cmd="home">Home</button>
-            <button class="cmd" type="button" data-cmd="cancel">Cancel</button>
-          </div>
-        </div>
       </div>
       <aside id="side">
         <header class="brand">

@@ -288,7 +288,7 @@ h2 {
   text-transform: uppercase;
 }
 .info .side.p {
-  color: var(--leaf);
+  color: #8cc0ef;
 }
 .info .side.e {
   color: var(--rose);
@@ -530,10 +530,18 @@ h2 {
   font-size: 44px;
   color: var(--gold);
 }
-/* phone HUD */
-.hud {
-  display: none;
+/* phone layout: battlefield on top, a solid panel of commands and cards below it (beside it in landscape) */
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
+#panel,
+.hud-top,
+.hud-mini,
 .phone-tip {
   display: none;
 }
@@ -541,22 +549,31 @@ body.compact #app {
   grid-template-columns: minmax(0, 1fr);
   padding-block: 8px;
 }
-body.compact #side {
+body.compact #side,
+body.compact .mini-keys.desk {
   display: none;
-}
-body.compact .hud {
-  display: block;
 }
 body.compact .phone-tip {
   display: block;
 }
-body.compact .mini-keys.desk {
-  display: none;
+body.compact #game {
+  display: flex;
+  flex-direction: column;
 }
-.screen:not([hidden]):not(.paused) ~ .hud {
-  visibility: hidden;
+body.compact #stage {
+  flex: 1 1 auto;
+  height: auto;
 }
-.hud-top {
+body.compact #panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+  padding: 6px 8px 8px;
+  background: var(--bench);
+  border-top: 1px solid var(--bench-edge);
+}
+body.compact .hud-top {
   position: absolute;
   top: 8px;
   left: 8px;
@@ -567,6 +584,21 @@ body.compact .mini-keys.desk {
   align-items: flex-start;
   max-width: calc(100% - 150px);
   pointer-events: none;
+}
+body.compact .hud-mini {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: min(132px, 30vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+.hud-mini #mini {
+  width: 100%;
+  opacity: 0.95;
 }
 body.compact .res {
   display: flex;
@@ -603,42 +635,27 @@ body.compact .wbar {
   color: var(--straw);
   max-width: 100%;
 }
-.hud-mini {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 3;
-  width: min(132px, 30vw);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
-}
-.hud-mini #mini {
-  width: 100%;
-  opacity: 0.95;
-}
 .cmds {
-  position: absolute;
-  right: 8px;
-  bottom: 104px;
-  z-index: 3;
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cmds::-webkit-scrollbar {
+  display: none;
 }
 .cmd {
-  min-width: 46px;
-  height: 40px;
-  padding: 0 9px;
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 11px;
   border: 1px solid var(--bench-edge);
   border-radius: 6px;
-  background: rgba(39, 30, 23, 0.92);
+  background: var(--soil);
   color: var(--straw);
-  font: 600 14px/1 var(--ui);
+  font: 600 14.5px/1 var(--ui);
   letter-spacing: 0.03em;
+  white-space: nowrap;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -656,49 +673,31 @@ body.compact .wbar {
   height: 30px;
   min-width: 0;
   font-size: 13px;
+  background: rgba(26, 20, 16, 0.88);
+}
+.cmd.small.on {
+  background: var(--paper);
 }
 .cmd:disabled {
   opacity: 0.35;
-}
-.cmds .bldcmd {
-  display: none;
-}
-.cmds.bld .bldcmd {
-  display: inline-block;
-}
-.cmds.bld .unitcmd {
-  display: none;
 }
 .cmd:focus-visible,
 .tab:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
-.tray {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 3;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 6px 8px;
-  background: linear-gradient(to top, rgba(20, 15, 11, 0.96), rgba(20, 15, 11, 0.82));
-  border-top: 1px solid var(--bench-edge);
-}
 .tabs {
   display: flex;
-  flex-direction: column;
   gap: 4px;
-  flex: 0 0 auto;
+  align-items: center;
 }
 .tab {
-  min-height: 26px;
-  padding: 0 10px;
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--bench-edge);
   border-radius: 4px;
-  background: rgba(20, 15, 11, 0.85);
+  background: transparent;
   color: var(--muted);
   font: 600 12.5px/1 var(--ui);
   letter-spacing: 0.1em;
@@ -710,57 +709,130 @@ body.compact .wbar {
   background: var(--bench-edge);
   color: var(--straw);
 }
-#tray-slot {
-  flex: 1;
-  min-width: 0;
+.tab-toggle {
+  margin-left: auto;
+  letter-spacing: 0.06em;
 }
-.tray.shut #tray-slot {
+#panel.shut #tray-slot {
   display: none;
 }
-.tray.shut {
-  right: auto;
+#panel.shut .tab.on {
   background: transparent;
-  border: 0;
+  color: var(--muted);
 }
-body.compact #tray .packets {
+#tray-slot {
+  position: relative;
+  min-width: 0;
+}
+#tray-slot::after {
+  content: '›';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+  display: grid;
+  place-items: center end;
+  padding-right: 2px;
+  font: 700 26px/1 var(--ui);
+  color: var(--straw);
+  background: linear-gradient(to right, rgba(39, 30, 23, 0), var(--bench) 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#tray-slot.more::after {
+  opacity: 1;
+}
+body.compact #tray-slot .packets {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 1px;
   -webkit-overflow-scrolling: touch;
 }
-body.compact #tray .packets::-webkit-scrollbar {
+body.compact #tray-slot .packets::-webkit-scrollbar {
   display: none;
 }
-body.compact #tray .packet {
-  flex: 0 0 118px;
+body.compact #tray-slot .packet {
+  flex: 0 0 122px;
   grid-template-columns: 30px minmax(0, 1fr);
   gap: 5px;
-  padding: 6px 6px 5px;
+  padding: 7px 6px 6px;
   font-size: 13.5px;
   touch-action: manipulation;
 }
-body.compact #tray .packet img {
+body.compact #tray-slot .packet img {
   width: 30px;
   height: 30px;
 }
-body.compact #tray .packet .cost {
+body.compact #tray-slot .packet .cost {
   font-size: 12px;
 }
 body.compact .msg {
   top: auto;
-  bottom: 156px;
+  bottom: 10px;
   font-size: 15px;
 }
-@media (max-width: 420px) {
-  .cmd {
-    padding: 0 7px;
-    font-size: 13px;
-    min-width: 40px;
+/* phones held sideways: panel becomes a column on the right so the battlefield keeps its height */
+@media (max-height: 540px) and (orientation: landscape) {
+  body.compact #game {
+    flex-direction: row;
   }
-  .cmds {
-    gap: 4px;
+  body.compact #panel {
+    width: 248px;
+    border-top: 0;
+    border-left: 1px solid var(--bench-edge);
+    min-height: 0;
+  }
+  body.compact .cmds {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  body.compact .cmd {
+    height: 32px;
+    padding: 0 9px;
+  }
+  body.compact #tray-slot {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  body.compact .tab-toggle {
+    display: none;
+  }
+  body.compact .tab {
+    padding: 0 8px;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+  }
+  body.compact #tray-slot .packets {
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 100%;
+    align-content: start;
+  }
+  body.compact #tray-slot::after {
+    content: '⌄';
+    top: auto;
+    left: 0;
+    width: auto;
+    height: 30px;
+    place-items: end center;
+    padding: 0;
+    background: linear-gradient(to bottom, rgba(39, 30, 23, 0), var(--bench) 75%);
+  }
+  body.compact #tray-slot .packet {
+    flex: none;
+    grid-template-columns: 28px minmax(0, 1fr);
+    padding: 6px 8px 5px;
+  }
+  body.compact #tray-slot .packet .txt {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
   }
 }
 @media (max-width: 760px) {

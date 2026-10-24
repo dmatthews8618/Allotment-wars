@@ -22,10 +22,14 @@ SEEDED_RANDOM = """
 """
 
 
-async def open_match(browser, diff="standard", seed=1, viewport=(1400, 860)):
+async def open_match(browser, diff="standard", seed=1, viewport=(1400, 860), phone=False, dpr=1):
     """Start a match and return (page, errors). The match is frozen: call
-    window.__AW.tick(dt) to advance it."""
-    page = await browser.new_page(viewport={"width": viewport[0], "height": viewport[1]})
+    window.__AW.tick(dt) to advance it. phone=True emulates a touch screen."""
+    ctx = await browser.new_context(
+        viewport={"width": viewport[0], "height": viewport[1]},
+        device_scale_factor=dpr, is_mobile=phone, has_touch=phone,
+    )
+    page = await ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     await page.add_init_script(SEEDED_RANDOM % seed)

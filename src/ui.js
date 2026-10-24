@@ -296,8 +296,17 @@ function uiTick() {
     else if (sel.length > 1) t = sel.length + ' selected · tap to move or attack';
     chip.hidden = !t;
     if (chip.textContent !== t) chip.textContent = t;
-    const cm = $('#cmds');
-    cm.classList.toggle('bld', !!sb);
+    // Only the commands that make sense right now: nothing selected, troops, a building, or mid-action.
+    const state =
+      G.placing || G.boxMode || G.amove
+        ? 'mode'
+        : sb
+          ? 'bld'
+          : sel.some(e => e.unit && e.team === 0)
+            ? 'units'
+            : 'none';
+    for (const bt of document.querySelectorAll('#cmds .cmd'))
+      bt.hidden = !bt.dataset.show.split(' ').includes(state);
     for (const bt of document.querySelectorAll('.cmd[data-cmd]')) {
       const c = bt.dataset.cmd;
       bt.classList.toggle(
@@ -342,7 +351,7 @@ function drawMini() {
   for (const e of G.ents) {
     if (e.dead) continue;
     if (e.team === 1 && !(e.bld ? seenByPlayer(e) : visibleToPlayer(e))) continue;
-    const col = e.team ? [235, 90, 72] : [170, 230, 110];
+    const col = e.team ? [235, 90, 72] : [130, 195, 255];
     const pts = e.bld ? [] : [[tileOf(e.x), tileOf(e.y)]];
     if (e.bld)
       for (let y = e.ty; y < e.ty + e.h; y++) for (let x = e.tx; x < e.tx + e.w; x++) pts.push([x, y]);

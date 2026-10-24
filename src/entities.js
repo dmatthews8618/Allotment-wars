@@ -51,7 +51,10 @@ function addBuilding(team, kind, tx, ty, free) {
     smokeT: Math.random(),
   };
   const key = d.gate ? `gate_${team}_0` : d.wall ? `wall_${team}_10` : kind + '_' + team;
-  e.spr = S.add.image(e.x, e.y, key).setDepth(d.wall ? 2.2 : 2);
+  e.spr = S.add
+    .image(e.x, e.y, key)
+    .setDepth(d.wall ? 2.2 : 2)
+    .setScale(1 / RES);
   for (let y = ty; y < ty + d.h; y++)
     for (let x = tx; x < tx + d.w; x++) {
       const i = idx(x, y);
@@ -83,8 +86,14 @@ function addBuilding(team, kind, tx, ty, free) {
     }
   }
   if (G.started && !G.headless) {
-    e.spr.setScale(0.55).setAlpha(0.3);
-    S.tweens.add({ targets: e.spr, scale: 1, alpha: 1, duration: d.wall ? 160 : 420, ease: 'Back.Out' });
+    e.spr.setScale(0.55 / RES).setAlpha(0.3);
+    S.tweens.add({
+      targets: e.spr,
+      scale: 1 / RES,
+      alpha: 1,
+      duration: d.wall ? 160 : 420,
+      ease: 'Back.Out',
+    });
     if (!d.wall)
       for (let i = 0; i < 4; i++)
         fx(e.x + (Math.random() - 0.5) * d.w * T, e.y + (Math.random() - 0.5) * d.h * T, 'puff', 1, 0.6);
@@ -145,7 +154,11 @@ function addUnit(team, kind, x, y) {
     .image(x + 2, y + 4, 'shadow')
     .setDepth(2.9)
     .setScale(d.r / 11);
-  e.spr = S.add.image(x, y, `${kind}_${team}_0`).setDepth(3).setRotation(e.ang);
+  e.spr = S.add
+    .image(x, y, `${kind}_${team}_0`)
+    .setDepth(3)
+    .setRotation(e.ang)
+    .setScale(1 / RES);
   G.ents.push(e);
   return e;
 }

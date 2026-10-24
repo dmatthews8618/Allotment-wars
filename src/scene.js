@@ -74,7 +74,7 @@ class Main extends Phaser.Scene {
         .image(h.tx * T + T / 2, h.ty * T + T / 2, 'heap')
         .setDepth(1)
         .setRotation(HR() * 6.28)
-        .setScale(0.45 + (0.55 * h.amount) / h.max);
+        .setScale((0.45 + (0.55 * h.amount) / h.max) / RES);
     if (!this.textures.exists('fog')) this.textures.createCanvas('fog', MW, MH);
     G.fogTex = this.textures.get('fog');
     G.fogCtx = G.fogTex.getContext();
@@ -115,12 +115,20 @@ class Main extends Phaser.Scene {
     const cam = this.cameras.main;
     setCamBounds();
     cam.setBackgroundColor('#0c0907');
-    if (document.body.classList.contains('compact') && Math.min(this.scale.width, this.scale.height) < 420)
-      cam.setZoom(0.85);
+    zoomTo(
+      document.body.classList.contains('compact') && Math.min(this.scale.width, this.scale.height) < 420 * DPR
+        ? 0.85
+        : 1
+    );
     centreOn(6.5 * T, 39.5 * T + 60);
+    this.selg = this.add.graphics().setDepth(2.95);
     this.ov = this.add.graphics().setDepth(7);
-    this.box = this.add.graphics().setDepth(20).setScrollFactor(0);
-    this.ghost = this.add.image(0, 0, 'water_0').setAlpha(0.6).setVisible(false).setDepth(6.5);
+    this.ghost = this.add
+      .image(0, 0, 'water_0')
+      .setAlpha(0.6)
+      .setVisible(false)
+      .setDepth(6.5)
+      .setScale(1 / RES);
     this.rallyImg = this.add.image(0, 0, 'rally_0').setOrigin(0.15, 0.95).setVisible(false).setDepth(6.6);
     initAmbience(this);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -146,7 +154,7 @@ class Main extends Phaser.Scene {
       if (p.wasTouch) {
         const d = downs();
         if (d.length >= 2) {
-          this.pinch = { d0: Math.hypot(d[0].x - d[1].x, d[0].y - d[1].y) || 1, z0: cam.zoom };
+          this.pinch = { d0: Math.hypot(d[0].x - d[1].x, d[0].y - d[1].y) || 1, z0: viewZoom() };
           this.drag = null;
           this.tpan = null;
           return;
@@ -183,14 +191,14 @@ class Main extends Phaser.Scene {
         const d = downs();
         if (d.length >= 2) {
           const dist = Math.hypot(d[0].x - d[1].x, d[0].y - d[1].y);
-          cam.setZoom(clamp((this.pinch.z0 * dist) / this.pinch.d0, 0.5, 1.8));
+          zoomTo((this.pinch.z0 * dist) / this.pinch.d0);
         }
         return;
       }
       if (this.tpan && p.id === this.tpan.id) {
         const dx = p.x - this.tpan.x,
           dy = p.y - this.tpan.y;
-        if (!this.tpan.moved && Math.hypot(dx, dy) > 10) this.tpan.moved = true;
+        if (!this.tpan.moved && Math.hypot(dx, dy) > 10 * DPR) this.tpan.moved = true;
         if (this.tpan.moved) {
           cam.scrollX = this.tpan.sx - dx / cam.zoom;
           cam.scrollY = this.tpan.sy - dy / cam.zoom;
@@ -206,7 +214,7 @@ class Main extends Phaser.Scene {
         this.drag &&
         !this.drag.active &&
         (!G.placing || G.boxMode) &&
-        Math.hypot(p.x - this.drag.x, p.y - this.drag.y) > 8
+        Math.hypot(p.x - this.drag.x, p.y - this.drag.y) > 8 * DPR
       )
         this.drag.active = true;
     });
@@ -222,7 +230,7 @@ class Main extends Phaser.Scene {
         this.tpan = null;
         if (!t.moved && !G.over && !G.paused) {
           const w = cam.getWorldPoint(p.x, p.y);
-          leftClick(w.x, w.y, false, true);
+          leftClick(w.x, w.y, false, true, p.upTime);
         }
         return;
       }
@@ -244,7 +252,7 @@ class Main extends Phaser.Scene {
       } else leftClick(w.x, w.y, shift, !!p.wasTouch);
     });
     this.input.on('wheel', (p, o, dx, dy) => {
-      cam.setZoom(clamp(cam.zoom - dy * 0.0012, 0.55, 1.6));
+      zoomTo(viewZoom() - dy * 0.0012);
     });
     buildSidebar();
     infoKey = '';
@@ -273,14 +281,14 @@ class Main extends Phaser.Scene {
     const dt = Math.min(delta / 1000, 0.05);
     const cam = this.cameras.main;
     if (!G.over) {
-      const sp = (700 * dt) / cam.zoom;
+      const sp = (700 * dt) / viewZoom();
       if (this.cursors.left.isDown) cam.scrollX -= sp;
       if (this.cursors.right.isDown) cam.scrollX += sp;
       if (this.cursors.up.isDown) cam.scrollY -= sp;
       if (this.cursors.down.isDown) cam.scrollY += sp;
       const p = this.input.activePointer;
       if (this.mouseIn && !this.lastTouch && !this.pan && !this.drag) {
-        const m = 14,
+        const m = 14 * DPR,
           W = this.scale.width,
           H = this.scale.height;
         if (p.x < m) cam.scrollX -= sp;
@@ -402,8 +410,10 @@ class Main extends Phaser.Scene {
         }
       }
     }
-    const g = this.ov;
+    const g = this.ov,
+      sg = this.selg;
     g.clear();
+    sg.clear();
     const cam = this.cameras.main;
     const bar = (e, w, y) => {
       const f = clamp(e.hp / e.maxHp, 0, 1);
@@ -416,14 +426,17 @@ class Main extends Phaser.Scene {
       if (e.dead) continue;
       const col = TEAM[e.team].sel;
       if (e.unit) {
-        g.lineStyle(1.5, col, 0.95);
-        g.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 8, e.d.r * 1.4 + 6);
-        bar(e, 24, e.y - e.d.r - 10);
+        // a disc on the ground under the unit, so a crowd stays readable
+        sg.fillStyle(col, 0.28);
+        sg.fillEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
+        sg.lineStyle(1.5, col, 0.95);
+        sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
+        if (e.hp < e.maxHp) bar(e, 20, e.y - e.d.r - 9);
         if (e.d.harv && e.load > 0) {
           g.fillStyle(0x140f0b, 0.85);
-          g.fillRect(e.x - 13, e.y + e.d.r + 5, 26, 4);
+          g.fillRect(e.x - 11, e.y + e.d.r + 4, 22, 4);
           g.fillStyle(0xd4813a, 1);
-          g.fillRect(e.x - 12, e.y + e.d.r + 6, (24 * e.load) / capOf(e), 2);
+          g.fillRect(e.x - 10, e.y + e.d.r + 5, (20 * e.load) / capOf(e), 2);
         }
       } else {
         const x0 = e.tx * T,
@@ -447,7 +460,7 @@ class Main extends Phaser.Scene {
     for (const e of G.ents) {
       if (e.dead || G.sel.includes(e) || e.hp >= e.maxHp) continue;
       if (e.team === 1 && !(e.bld ? visibleToPlayer(e) : e.spr.visible)) continue;
-      if (e.unit) bar(e, 22, e.y - e.d.r - 9);
+      if (e.unit) bar(e, 20, e.y - e.d.r - 9);
       else bar(e, Math.max(20, e.w * T * 0.7), e.ty * T - 6);
     }
     const sb = selBld();
@@ -509,17 +522,15 @@ class Main extends Phaser.Scene {
           G.amove || (h && h.team === 1 && armed) ? 'crosshair' : h ? 'pointer' : 'default';
       }
     }
-    const b = this.box;
-    b.clear();
     if (this.drag && this.drag.active) {
-      b.fillStyle(0xb8e383, 0.08);
-      b.lineStyle(1, 0xb8e383, 0.9);
-      const x = Math.min(p.x, this.drag.x),
-        y = Math.min(p.y, this.drag.y),
-        bw = Math.abs(p.x - this.drag.x),
-        bh = Math.abs(p.y - this.drag.y);
-      b.fillRect(x, y, bw, bh);
-      b.strokeRect(x, y, bw, bh);
+      g.fillStyle(0xb8e383, 0.08);
+      g.lineStyle(1.5 / viewZoom(), 0xb8e383, 0.9);
+      const x = Math.min(w.x, this.drag.wx),
+        y = Math.min(w.y, this.drag.wy),
+        bw = Math.abs(w.x - this.drag.wx),
+        bh = Math.abs(w.y - this.drag.wy);
+      g.fillRect(x, y, bw, bh);
+      g.strokeRect(x, y, bw, bh);
     }
   }
 }

@@ -276,7 +276,7 @@ function updHeap(h) {
     G.heapAt[idx(h.tx, h.ty)] = -1;
     return;
   }
-  h.spr.setScale(0.45 + (0.55 * h.amount) / h.max);
+  h.spr.setScale((0.45 + (0.55 * h.amount) / h.max) / RES);
 }
 function updHarv(e, dt) {
   if (e.order && e.order.type === 'move') {
