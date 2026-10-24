@@ -25,6 +25,7 @@ function updProduction(dt) {
       b.t += dt * f;
       if (b.t >= b.total) {
         b.ready = true;
+        if (team === 0) GameAudio.sound('ready', 0, 0, true);
         if (team === 0)
           announce('Ready to plant. ' + (touchUI() ? 'Tap' : 'Click') + ' the packet, then the ground');
       }
@@ -34,6 +35,7 @@ function updProduction(dt) {
       r.t += dt * f;
       if (r.t >= r.total) {
         applyUpgrade(team, r.key);
+        if (team === 0) GameAudio.sound('capture', 0, 0, true);
         G.research[team] = null;
         if (team === 0) announce(UPGRADES[r.key].names[0] + ' researched');
       }
@@ -88,6 +90,7 @@ function updProduction(dt) {
         setPath(u, e.rally.x, e.rally.y);
       }
       if (e.team === 0 && G.time - G.readyT > 2) {
+        GameAudio.sound('ready', 0, 0, true);
         G.readyT = G.time;
         announce(u.d.names[0] + ' ready');
       }

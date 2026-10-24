@@ -38,4 +38,6 @@ function endGame(win) {
   $('#result-seal').innerHTML = resultEmblem(win);
   $('#over').hidden = false;
   $('#again').focus();
+  GameAudio.apply();
+  GameAudio.sound(win ? 'win' : 'lose', 0, 0, true);
 }

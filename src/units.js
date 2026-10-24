@@ -383,6 +383,7 @@ function updHarv(e, dt) {
         G.money[e.team] += amt;
         if (e.team === 0) {
           G.stats.harvested += amt;
+          GameAudio.sound('harvest', e.x, e.y);
           floatText(e.x, e.y - 16, '+' + amt);
         }
         e.load = 0;

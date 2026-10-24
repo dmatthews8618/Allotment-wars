@@ -86,6 +86,7 @@ function addBuilding(team, kind, tx, ty, free) {
     }
   }
   if (G.started && !G.headless) {
+    GameAudio.sound('place', e.x, e.y);
     e.spr.setScale(0.55 / RES).setAlpha(0.3);
     S.tweens.add({
       targets: e.spr,

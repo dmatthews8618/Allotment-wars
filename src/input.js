@@ -26,6 +26,7 @@ function pick(wx, wy, tol) {
   return null;
 }
 function orderMove(units, type, wx, wy) {
+  if (units.length) GameAudio.sound('order', 0, 0, true);
   PF.team = 0;
   const tiles = freeTilesAround(tileOf(wx), tileOf(wy), units.length);
   const goal = { x: wx, y: wy };

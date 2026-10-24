@@ -5,6 +5,7 @@
 let msgTimer = null;
 function announce(t, warn) {
   if (G && G.headless) return;
+  if (warn) GameAudio.sound('warn', 0, 0, true);
   const m = $('#msg');
   m.textContent = t;
   m.className = 'msg show' + (warn ? ' warn' : '');

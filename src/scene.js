@@ -152,6 +152,7 @@ class Main extends Phaser.Scene {
     this.rallyImg = this.add.image(0, 0, 'rally_0').setOrigin(0.15, 0.95).setVisible(false).setDepth(6.6);
     initAmbience(this);
     initGardenArt(this);
+    GameAudio.reset();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.mouse.disableContextMenu();
     this.drag = null;
@@ -299,6 +300,7 @@ class Main extends Phaser.Scene {
   }
   update(time, delta) {
     if (!G) return;
+    GameAudio.update();
     const dt = Math.min(delta / 1000, 0.05);
     const cam = this.cameras.main;
     if (!G.over) {

@@ -3,6 +3,19 @@
 
 /* ---------------- combat ---------------- */
 function fire(e, t) {
+  GameAudio.sound(
+    e.kind === 'hose' || e.kind === 'sprink'
+      ? 'hose'
+      : e.kind === 'hive'
+        ? 'buzz'
+        : e.kind === 'cata'
+          ? 'cata'
+          : e.kind === 'tiller'
+            ? 'tiller'
+            : 'fork',
+    e.x,
+    e.y
+  );
   const d = e.d,
     ak = e.kind,
     pk = d.proj;
@@ -106,6 +119,7 @@ function updProj(dt) {
   if (G.proj.some(p => p.done)) G.proj = G.proj.filter(p => !p.done);
 }
 function impact(p) {
+  GameAudio.sound(p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'soil', p.tx, p.ty);
   const tex = p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'splat';
   impactAccent(p);
   if (p.splash) {
@@ -215,6 +229,7 @@ function debris(x, y, n, spread) {
   }
 }
 function kill(t) {
+  GameAudio.sound(t.bld && !t.d.wall ? 'destroy' : 'soil', t.x, t.y);
   t.dead = true;
   t.spr.destroy();
   if (t.sh) t.sh.destroy();

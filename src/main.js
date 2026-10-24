@@ -5,12 +5,14 @@
 function togglePause() {
   if (!G || G.over) return;
   G.paused = !G.paused;
+  GameAudio.apply();
   $('#paused').hidden = !G.paused;
   if (G.paused) $('#resume').focus();
   else $('#resume').blur();
 }
 window.addEventListener('keydown', ev => {
   if (!G || !S) return;
+  if (ev.target.closest && ev.target.closest('#sound-controls')) return;
   if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return;
   const k = ev.key.toLowerCase();
   if (k === 'p') {
@@ -164,6 +166,7 @@ $('#menu').addEventListener('click', () => {
   document.body.classList.remove('result-open');
   $('#brief').hidden = false;
   setMenuOpen(true);
+  GameAudio.apply();
   $('#brief [data-diff="standard"]').focus();
 });
 // The canvas has DPR device pixels per screen point, so it stays sharp on phones; Phaser's zoom shrinks it back to fit.
@@ -174,6 +177,8 @@ const stageSize = () => {
 const [stageW, stageH] = stageSize();
 game = new Phaser.Game({
   type: Phaser.AUTO,
+  // Our single audio engine owns sound and browser gesture handling.
+  audio: { noAudio: true },
   parent: 'stage',
   backgroundColor: '#0c0907',
   scale: { mode: Phaser.Scale.NONE, width: stageW, height: stageH, zoom: 1 / DPR },

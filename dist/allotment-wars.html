@@ -1702,11 +1702,155 @@ body.compact .garden-status {
 body.compact #hud-minislot {
   width: 100%;
 }
+
+/* Sound controls stay above the battlefield, including the pause overlay. */
+.sound-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+}
+.sound-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.sound-buttons button {
+  min-height: 36px;
+  padding: 7px 11px;
+  color: #e5e8d2;
+  background: #21342ded;
+  border: 1px solid #6d7b55;
+  border-radius: 7px;
+  font:
+    600 12px Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.sound-buttons button[aria-pressed='true'] {
+  color: #b9bea9;
+  background: #1a2926;
+}
+.sound-buttons button:focus-visible,
+.sound-panel input:focus-visible {
+  outline: 2px solid #e8d18a;
+  outline-offset: 3px;
+}
+#sound-settings {
+  min-width: 36px;
+  padding: 5px;
+  font-size: 20px;
+  line-height: 1;
+}
+.sound-panel {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  width: min(265px, calc(100vw - 48px));
+  padding: 18px;
+  background: linear-gradient(135deg, #304436, #152b23);
+  border: 1px solid #8b9870;
+  border-radius: 12px;
+  box-shadow: 0 12px 35px #07130dbb;
+  color: #ebe6ca;
+}
+.sound-panel h2 {
+  font-size: 12px;
+  margin: 0 0 15px;
+}
+.sound-panel label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font:
+    12px Arial,
+    sans-serif;
+  margin-top: 10px;
+}
+.sound-panel output {
+  color: #e4c975;
+  font-variant-numeric: tabular-nums;
+}
+.sound-panel input {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 3px 0;
+  accent-color: #d9c575;
+  cursor: pointer;
+}
+.sound-panel p {
+  font:
+    11px/1.5 Arial,
+    sans-serif;
+  color: #b5c4aa;
+  margin: 9px 0 0;
+}
+body.menu-open .sound-controls,
+body.result-open .sound-controls {
+  display: none;
+}
+body.compact .sound-controls {
+  top: auto;
+  bottom: 8px;
+  right: 8px;
+}
+body.compact .sound-buttons button {
+  min-height: 40px;
+}
+body.compact .sound-panel {
+  top: auto;
+  bottom: 47px;
+  max-height: calc(100dvh - 190px);
+  overflow-y: auto;
+}
+@media (max-height: 540px) {
+  body.compact .sound-panel {
+    max-height: calc(100dvh - 90px);
+  }
+}
 </style>
 
 <div id="app">
       <div id="game">
         <div id="stage">
+          <div id="sound-controls" class="sound-controls">
+            <div class="sound-buttons">
+              <button id="sound-toggle" type="button" aria-pressed="false" aria-label="Mute game sound">
+                Sound on
+              </button>
+              <button
+                id="sound-settings"
+                type="button"
+                aria-expanded="false"
+                aria-controls="sound-panel"
+                aria-label="Sound settings"
+              >
+                ⚙
+              </button>
+            </div>
+            <section id="sound-panel" class="sound-panel" aria-label="Sound settings" hidden>
+              <h2>Garden sounds</h2>
+              <label for="audio-master"
+                >Master volume <output id="audio-master-value" for="audio-master">55%</output></label
+              >
+              <input id="audio-master" type="range" min="0" max="100" value="55" />
+              <label for="audio-effects"
+                >Effects <output id="audio-effects-value" for="audio-effects">75%</output></label
+              >
+              <input id="audio-effects" type="range" min="0" max="100" value="75" />
+              <label for="audio-ambience"
+                >Birds, breeze &amp; crickets
+                <output id="audio-ambience-value" for="audio-ambience">45%</output></label
+              >
+              <input id="audio-ambience" type="range" min="0" max="100" value="45" />
+              <label for="audio-music"
+                >Music · optional <output id="audio-music-value" for="audio-music">0%</output></label
+              >
+              <input id="audio-music" type="range" min="0" max="100" value="0" />
+              <p>Settings are remembered on this device.</p>
+            </section>
+          </div>
           <div class="field-label" aria-hidden="true">
             <span class="field-dot"></span> THE ALLOTMENTS
             <span>Scout the map. Destroy every enemy building.</span>
@@ -2284,6 +2428,485 @@ const idx = (x, y) => y * MW + x,
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const nameOf = e => e.d.names[e.team];
 const isWall = e => e && e.bld && e.d.wall;
+
+
+/* ===== src/audio.js ===== */
+// Original Web Audio sound design. No downloads, recordings or gameplay RNG.
+'use strict';
+
+class GardenAudio {
+  constructor() {
+    this.settings = { master: 55, effects: 75, ambience: 45, music: 0, muted: false };
+    try {
+      const saved = JSON.parse(localStorage.getItem('allotment-wars-audio-v1'));
+      if (saved && typeof saved === 'object') {
+        for (const key of ['master', 'effects', 'ambience', 'music'])
+          if (Number.isFinite(saved[key])) this.settings[key] = clamp(saved[key], 0, 100);
+        if (typeof saved.muted === 'boolean') this.settings.muted = saved.muted;
+      }
+    } catch (_) {
+      /* Private browsing and file:// may not offer storage. */
+    }
+    this.supported = !!(window.AudioContext || window.webkitAudioContext);
+    this.ctx = null;
+    this.voices = new Set();
+    this.cooldowns = new Map();
+    this.random = mulberry32(0x736f756e);
+    this.active = false;
+    this.nextNature = 0;
+    this.nextMusic = 0;
+    this.musicStep = 0;
+  }
+  async unlock() {
+    if (!this.supported) return;
+    try {
+      if (!this.ctx) {
+        const AudioAPI = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioAPI({ latencyHint: 'interactive' });
+        const c = this.ctx;
+        this.master = c.createGain();
+        const limiter = c.createDynamicsCompressor();
+        limiter.threshold.value = -12;
+        limiter.knee.value = 12;
+        limiter.ratio.value = 6;
+        limiter.attack.value = 0.003;
+        limiter.release.value = 0.18;
+        this.master.connect(limiter);
+        limiter.connect(c.destination);
+        this.buses = {};
+        for (const name of ['effects', 'ambience', 'music', 'ui']) {
+          this.buses[name] = c.createGain();
+          this.buses[name].connect(this.master);
+        }
+        this.noise = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+        const data = this.noise.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = this.random() * 2 - 1;
+        this.wind = c.createBufferSource();
+        this.wind.buffer = this.noise;
+        this.wind.loop = true;
+        const low = c.createBiquadFilter();
+        low.type = 'lowpass';
+        low.frequency.value = 650;
+        const high = c.createBiquadFilter();
+        high.type = 'highpass';
+        high.frequency.value = 140;
+        this.windGain = c.createGain();
+        this.windGain.gain.value = 0;
+        this.wind.connect(low);
+        low.connect(high);
+        high.connect(this.windGain);
+        this.windGain.connect(this.buses.ambience);
+        this.wind.start();
+        this.nextNature = c.currentTime + 2;
+        this.nextMusic = c.currentTime + 0.5;
+      }
+      if (!document.hidden && this.ctx.state !== 'running') await this.ctx.resume();
+      this.apply();
+    } catch (_) {
+      // Audio is optional. A browser refusal must never stop a match.
+      this.stopVoices();
+    }
+  }
+  playing() {
+    return !!(
+      G &&
+      G.started &&
+      !G.headless &&
+      !G.paused &&
+      !G.over &&
+      !document.hidden &&
+      !document.body.classList.contains('menu-open')
+    );
+  }
+  save() {
+    try {
+      localStorage.setItem('allotment-wars-audio-v1', JSON.stringify(this.settings));
+    } catch (_) {}
+  }
+  set(key, value) {
+    if (key === 'muted') this.settings.muted = !!value;
+    else if (['master', 'effects', 'ambience', 'music'].includes(key) && Number.isFinite(value))
+      this.settings[key] = clamp(value, 0, 100);
+    if (this.settings.muted || this.settings.master === 0) this.stopVoices();
+    this.save();
+    this.apply();
+    this.refreshControls();
+  }
+  apply() {
+    if (!this.ctx || !this.buses) return;
+    const c = this.ctx,
+      s = this.settings;
+    this.master.gain.setTargetAtTime(s.muted ? 0 : (s.master / 100) * 0.7, c.currentTime, 0.02);
+    for (const key of ['effects', 'ambience', 'music'])
+      this.buses[key].gain.setTargetAtTime(s[key] / 100, c.currentTime, 0.02);
+    this.buses.ui.gain.setTargetAtTime(s.effects / 100, c.currentTime, 0.02);
+    const active = this.playing();
+    if (this.active && !active) this.stopVoices();
+    this.active = active;
+    this.windGain.gain.setTargetAtTime(active ? 0.12 : 0, c.currentTime, 0.08);
+  }
+  stopVoices() {
+    for (const v of [...this.voices]) {
+      for (const source of v.sources) {
+        try {
+          source.stop();
+        } catch (_) {}
+      }
+      v.clean();
+    }
+  }
+  reset() {
+    this.stopVoices();
+    this.cooldowns.clear();
+    this.musicStep = 0;
+    if (this.ctx) {
+      this.nextNature = this.ctx.currentTime + 2;
+      this.nextMusic = this.ctx.currentTime + 0.5;
+    }
+    this.apply();
+  }
+  location(x, y) {
+    if (!G || !S || !Number.isFinite(x) || !Number.isFinite(y) || !visibleToPlayerPt(x, y)) return null;
+    const v = S.cameras.main.worldView;
+    const dx = Math.max(0, Math.abs(x - v.centerX) - v.width / 2),
+      dy = Math.max(0, Math.abs(y - v.centerY) - v.height / 2);
+    const distance = Math.hypot(dx, dy),
+      reach = 5 * T;
+    if (distance > reach) return null;
+    return {
+      gain: 0.8 * (1 - distance / reach),
+      pan: clamp((x - v.centerX) / Math.max(T, v.width * 0.6), -0.8, 0.8),
+    };
+  }
+  sound(kind, x, y, global = false) {
+    const c = this.ctx;
+    if (
+      !c ||
+      c.state !== 'running' ||
+      !this.supported ||
+      this.settings.muted ||
+      this.settings.master === 0 ||
+      document.hidden ||
+      (G && G.headless)
+    )
+      return false;
+    if (!global && !this.playing()) return false;
+    const bus = global ? 'ui' : 'effects';
+    if (this.settings[global ? 'effects' : bus] === 0) return false;
+    const point = global ? { gain: 0.65, pan: 0 } : this.location(x, y);
+    if (!point || point.gain <= 0) return false;
+    const limits = {
+      ui: 0.07,
+      order: 0.18,
+      fork: 0.1,
+      hose: 0.12,
+      tiller: 0.18,
+      cata: 0.25,
+      splash: 0.15,
+      soil: 0.15,
+      buzz: 0.3,
+      destroy: 0.3,
+      ready: 0.8,
+      harvest: 0.35,
+      capture: 1,
+      warn: 2.5,
+      place: 0.15,
+    };
+    if (c.currentTime < (this.cooldowns.get(kind) || 0)) return false;
+    if (this.voices.size >= 20) return false;
+    this.cooldowns.set(kind, c.currentTime + (limits[kind] || 0.2));
+    this.play(kind, bus, point.gain, point.pan);
+    return true;
+  }
+  // Each effect owns its sources and connections, and releases all of them.
+  play(kind, bus, level = 1, pan = 0, notes = null, at = null) {
+    const c = this.ctx;
+    if (!c || this.voices.size >= 20) return;
+    const root = c.createGain();
+    root.gain.value = level;
+    const panner = c.createStereoPanner ? c.createStereoPanner() : c.createGain();
+    if (panner.pan) panner.pan.value = pan;
+    root.connect(panner);
+    panner.connect(this.buses[bus]);
+    const voice = { sources: [], nodes: [root, panner], clean: null };
+    let remaining = 0,
+      cleaned = false;
+    voice.clean = () => {
+      if (cleaned) return;
+      cleaned = true;
+      voice.nodes.forEach(n => n.disconnect());
+      this.voices.delete(voice);
+    };
+    this.voices.add(voice);
+    const pitch = 0.97 + this.random() * 0.06;
+    const layer = (noise, frequency, endFrequency, duration, volume, delay = 0, type = 'sine') => {
+      const t = (at == null ? c.currentTime : at) + delay,
+        end = t + duration;
+      const source = noise ? c.createBufferSource() : c.createOscillator(),
+        amp = c.createGain();
+      if (noise) {
+        source.buffer = this.noise;
+        source.playbackRate.value = 0.8 + this.random() * 0.4;
+      } else {
+        source.type = type;
+        source.frequency.setValueAtTime(frequency * pitch, t);
+        source.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency * pitch), end);
+      }
+      const filter = c.createBiquadFilter();
+      filter.type = noise ? 'bandpass' : 'lowpass';
+      filter.Q.value = noise ? 0.65 : 0.5;
+      filter.frequency.setValueAtTime(noise ? frequency : Math.max(800, frequency * 3), t);
+      if (noise) filter.frequency.exponentialRampToValueAtTime(endFrequency, end);
+      amp.gain.setValueAtTime(0.0001, t);
+      amp.gain.linearRampToValueAtTime(volume, t + 0.005);
+      amp.gain.exponentialRampToValueAtTime(0.0001, end);
+      source.connect(filter);
+      filter.connect(amp);
+      amp.connect(root);
+      voice.sources.push(source);
+      voice.nodes.push(source, filter, amp);
+      remaining++;
+      source.onended = () => {
+        remaining--;
+        if (!remaining) voice.clean();
+      };
+      source.start(t);
+      source.stop(end + 0.015);
+    };
+    const tone = (f, end, dur, gain, delay = 0, type = 'sine') =>
+      layer(false, f, end, dur, gain, delay, type);
+    const noise = (f, end, dur, gain, delay = 0) => layer(true, f, end, dur, gain, delay);
+    const chime = (frequencies, gap = 0.12, gain = 0.15, duration = 0.45) =>
+      frequencies.forEach((f, i) => {
+        tone(f, f, duration, gain, i * gap, 'triangle');
+        tone(f * 2, f * 2, duration * 0.4, gain * 0.18, i * gap);
+      });
+    switch (kind) {
+      case 'fork':
+        tone(680, 270, 0.09, 0.13);
+        tone(170, 110, 0.07, 0.2);
+        noise(2100, 900, 0.055, 0.16);
+        break;
+      case 'hose':
+        noise(2600, 1100, 0.16, 0.3);
+        tone(920, 420, 0.09, 0.07);
+        break;
+      case 'tiller':
+        tone(72, 95, 0.19, 0.11, 0, 'sawtooth');
+        noise(500, 240, 0.14, 0.25);
+        break;
+      case 'cata':
+        tone(130, 45, 0.25, 0.25, 0, 'triangle');
+        noise(450, 180, 0.18, 0.38);
+        break;
+      case 'splash':
+        noise(2300, 600, 0.22, 0.35);
+        tone(1200, 470, 0.12, 0.075, 0.02);
+        break;
+      case 'soil':
+        noise(700, 180, 0.18, 0.4);
+        tone(105, 42, 0.17, 0.2);
+        break;
+      case 'buzz':
+        tone(182, 170, 0.22, 0.055, 0, 'sawtooth');
+        tone(190, 176, 0.19, 0.04, 0.025, 'sawtooth');
+        break;
+      case 'destroy':
+        noise(900, 150, 0.6, 0.65);
+        tone(80, 32, 0.4, 0.3);
+        noise(2100, 500, 0.18, 0.2, 0.12);
+        break;
+      case 'place':
+        tone(170, 95, 0.13, 0.22);
+        tone(240, 120, 0.1, 0.16, 0.07);
+        noise(650, 300, 0.18, 0.25);
+        break;
+      case 'ready':
+        chime([523.25, 659.25], 0.11, 0.12, 0.35);
+        break;
+      case 'harvest':
+        chime([660, 880], 0.075, 0.085, 0.19);
+        break;
+      case 'capture':
+        chime([293.66, 369.99, 440, 587.33], 0.12, 0.13, 0.6);
+        break;
+      case 'warn':
+        tone(440, 390, 0.16, 0.12, 0, 'triangle');
+        tone(330, 300, 0.2, 0.12, 0.22, 'triangle');
+        break;
+      case 'win':
+        chime([293.66, 369.99, 440, 587.33, 739.99], 0.15, 0.16, 0.9);
+        break;
+      case 'lose':
+        chime([329.63, 293.66, 246.94], 0.3, 0.13, 0.9);
+        break;
+      case 'order':
+        tone(310, 200, 0.065, 0.075, 0, 'triangle');
+        break;
+      case 'bird':
+        tone(1600, 2600, 0.12, 0.05);
+        tone(2400, 1750, 0.14, 0.035, 0.17);
+        tone(1850, 2200, 0.1, 0.025, 0.37);
+        break;
+      case 'cricket':
+        for (let i = 0; i < 3; i++) noise(4600, 4200, 0.045, 0.1, i * 0.075);
+        break;
+      case 'music':
+        chime(notes, 0, 0.08, 1.2);
+        break;
+      default:
+        noise(2200, 1000, 0.035, 0.1);
+        break;
+    }
+    if (!remaining) voice.clean();
+  }
+  update() {
+    if (!this.ctx) return;
+    const active = this.playing();
+    if (active !== this.active) this.apply();
+    if (!active || this.settings.muted || this.settings.master === 0 || this.ctx.state !== 'running') return;
+    const t = this.ctx.currentTime;
+    if (this.settings.ambience && t >= this.nextNature && this.voices.size < 12) {
+      this.nextNature = t + 4 + this.random() * 7;
+      const night = S && S.daylight ? S.daylight.night : 0;
+      this.play(night > 0.6 ? 'cricket' : 'bird', 'ambience', 0.7, (this.random() - 0.5) * 1.2);
+    }
+    if (this.settings.music && t >= this.nextMusic && this.voices.size < 12) {
+      // A sparse, original D-pentatonic plucked motif, with room for battle cues.
+      const melody = [
+        62,
+        66,
+        69,
+        null,
+        71,
+        69,
+        66,
+        null,
+        64,
+        66,
+        69,
+        74,
+        null,
+        71,
+        69,
+        null,
+        66,
+        64,
+        62,
+        null,
+        57,
+        62,
+        66,
+        null,
+        64,
+        69,
+        66,
+        null,
+        64,
+        62,
+        null,
+        null,
+      ];
+      const n = melody[this.musicStep++ % melody.length];
+      this.nextMusic = t + 0.72;
+      if (n != null) this.play('music', 'music', 0.6, 0, [440 * 2 ** ((n - 69) / 12)]);
+    }
+  }
+  refreshControls() {
+    const button = $('#sound-toggle');
+    if (!button) return;
+    const off = this.settings.muted || this.settings.master === 0;
+    button.textContent = this.supported ? (off ? 'Sound off' : 'Sound on') : 'No audio';
+    button.setAttribute('aria-pressed', String(off));
+    button.setAttribute(
+      'aria-label',
+      this.supported
+        ? off
+          ? 'Unmute game sound'
+          : 'Mute game sound'
+        : 'Audio is unavailable in this browser'
+    );
+    button.disabled = !this.supported;
+    for (const key of ['master', 'effects', 'ambience', 'music']) {
+      const input = $('#audio-' + key),
+        output = $('#audio-' + key + '-value');
+      input.value = this.settings[key];
+      output.textContent = this.settings[key] + '%';
+      input.disabled = !this.supported;
+    }
+  }
+}
+const GameAudio = new GardenAudio();
+(function initAudioControls() {
+  const controls = $('#sound-controls'),
+    panel = $('#sound-panel'),
+    settings = $('#sound-settings');
+  const close = () => {
+    panel.hidden = true;
+    settings.setAttribute('aria-expanded', 'false');
+  };
+  $('#sound-toggle').addEventListener('click', () => {
+    if (GameAudio.settings.master === 0) {
+      GameAudio.settings.muted = false;
+      GameAudio.set('master', 55);
+    } else GameAudio.set('muted', !GameAudio.settings.muted);
+    void GameAudio.unlock();
+  });
+  settings.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    settings.setAttribute('aria-expanded', String(!panel.hidden));
+  });
+  for (const key of ['master', 'effects', 'ambience', 'music'])
+    $('#audio-' + key).addEventListener('input', ev => {
+      GameAudio.set(key, Number(ev.target.value));
+      void GameAudio.unlock();
+    });
+  controls.addEventListener('keydown', ev => {
+    ev.stopPropagation();
+    if (ev.key === 'Escape') {
+      close();
+      settings.focus();
+    }
+  });
+  document.addEventListener(
+    'pointerdown',
+    ev => {
+      if (!controls.contains(ev.target)) close();
+      if (ev.isTrusted) void GameAudio.unlock();
+    },
+    { capture: true }
+  );
+  document.addEventListener(
+    'keydown',
+    ev => {
+      if (ev.isTrusted) void GameAudio.unlock();
+    },
+    { capture: true }
+  );
+  document.addEventListener('click', ev => {
+    // Safari may grant audio activation on the completed tap rather than its down event.
+    if (ev.isTrusted) void GameAudio.unlock();
+    if (ev.target.closest('button') && !controls.contains(ev.target)) GameAudio.sound('ui', 0, 0, true);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!GameAudio.ctx) return;
+    GameAudio.apply();
+    if (document.hidden) {
+      GameAudio.stopVoices();
+      void GameAudio.ctx.suspend().catch(() => {});
+    } else void GameAudio.unlock();
+  });
+  window.addEventListener('pagehide', () => {
+    if (GameAudio.ctx) {
+      GameAudio.stopVoices();
+      void GameAudio.ctx.suspend().catch(() => {});
+    }
+  });
+  window.addEventListener('pageshow', () => {
+    if (GameAudio.ctx && !document.hidden) void GameAudio.unlock();
+  });
+  GameAudio.refreshControls();
+})();
 
 
 /* ===== src/map.js ===== */
@@ -4811,6 +5434,7 @@ function addBuilding(team, kind, tx, ty, free) {
     }
   }
   if (G.started && !G.headless) {
+    GameAudio.sound('place', e.x, e.y);
     e.spr.setScale(0.55 / RES).setAlpha(0.3);
     S.tweens.add({
       targets: e.spr,
@@ -5558,6 +6182,7 @@ function updHarv(e, dt) {
         G.money[e.team] += amt;
         if (e.team === 0) {
           G.stats.harvested += amt;
+          GameAudio.sound('harvest', e.x, e.y);
           floatText(e.x, e.y - 16, '+' + amt);
         }
         e.load = 0;
@@ -5592,6 +6217,19 @@ function updTurret(e, dt) {
 
 /* ---------------- combat ---------------- */
 function fire(e, t) {
+  GameAudio.sound(
+    e.kind === 'hose' || e.kind === 'sprink'
+      ? 'hose'
+      : e.kind === 'hive'
+        ? 'buzz'
+        : e.kind === 'cata'
+          ? 'cata'
+          : e.kind === 'tiller'
+            ? 'tiller'
+            : 'fork',
+    e.x,
+    e.y
+  );
   const d = e.d,
     ak = e.kind,
     pk = d.proj;
@@ -5695,6 +6333,7 @@ function updProj(dt) {
   if (G.proj.some(p => p.done)) G.proj = G.proj.filter(p => !p.done);
 }
 function impact(p) {
+  GameAudio.sound(p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'soil', p.tx, p.ty);
   const tex = p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'splat';
   impactAccent(p);
   if (p.splash) {
@@ -5804,6 +6443,7 @@ function debris(x, y, n, spread) {
   }
 }
 function kill(t) {
+  GameAudio.sound(t.bld && !t.d.wall ? 'destroy' : 'soil', t.x, t.y);
   t.dead = true;
   t.spr.destroy();
   if (t.sh) t.sh.destroy();
@@ -5902,6 +6542,7 @@ function updProduction(dt) {
       b.t += dt * f;
       if (b.t >= b.total) {
         b.ready = true;
+        if (team === 0) GameAudio.sound('ready', 0, 0, true);
         if (team === 0)
           announce('Ready to plant. ' + (touchUI() ? 'Tap' : 'Click') + ' the packet, then the ground');
       }
@@ -5911,6 +6552,7 @@ function updProduction(dt) {
       r.t += dt * f;
       if (r.t >= r.total) {
         applyUpgrade(team, r.key);
+        if (team === 0) GameAudio.sound('capture', 0, 0, true);
         G.research[team] = null;
         if (team === 0) announce(UPGRADES[r.key].names[0] + ' researched');
       }
@@ -5965,6 +6607,7 @@ function updProduction(dt) {
         setPath(u, e.rally.x, e.rally.y);
       }
       if (e.team === 0 && G.time - G.readyT > 2) {
+        GameAudio.sound('ready', 0, 0, true);
         G.readyT = G.time;
         announce(u.d.names[0] + ' ready');
       }
@@ -6056,6 +6699,7 @@ function updGardens(dt) {
             g.seen = true;
             g.knownOwner = 0;
             G.stats.gardensCaptured++;
+            GameAudio.sound('capture', 0, 0, true);
           }
           if (!G.headless && (team === 0 || previous === 0 || gardenVisible(g)))
             announce(
@@ -6535,6 +7179,8 @@ function endGame(win) {
   $('#result-seal').innerHTML = resultEmblem(win);
   $('#over').hidden = false;
   $('#again').focus();
+  GameAudio.apply();
+  GameAudio.sound(win ? 'win' : 'lose', 0, 0, true);
 }
 
 
@@ -6546,6 +7192,7 @@ function endGame(win) {
 let msgTimer = null;
 function announce(t, warn) {
   if (G && G.headless) return;
+  if (warn) GameAudio.sound('warn', 0, 0, true);
   const m = $('#msg');
   m.textContent = t;
   m.className = 'msg show' + (warn ? ' warn' : '');
@@ -6979,6 +7626,7 @@ function pick(wx, wy, tol) {
   return null;
 }
 function orderMove(units, type, wx, wy) {
+  if (units.length) GameAudio.sound('order', 0, 0, true);
   PF.team = 0;
   const tiles = freeTilesAround(tileOf(wx), tileOf(wy), units.length);
   const goal = { x: wx, y: wy };
@@ -7789,6 +8437,7 @@ class Main extends Phaser.Scene {
     this.rallyImg = this.add.image(0, 0, 'rally_0').setOrigin(0.15, 0.95).setVisible(false).setDepth(6.6);
     initAmbience(this);
     initGardenArt(this);
+    GameAudio.reset();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.mouse.disableContextMenu();
     this.drag = null;
@@ -7936,6 +8585,7 @@ class Main extends Phaser.Scene {
   }
   update(time, delta) {
     if (!G) return;
+    GameAudio.update();
     const dt = Math.min(delta / 1000, 0.05);
     const cam = this.cameras.main;
     if (!G.over) {
@@ -8567,12 +9217,14 @@ setMenuOpen(!$('#brief').hidden);
 function togglePause() {
   if (!G || G.over) return;
   G.paused = !G.paused;
+  GameAudio.apply();
   $('#paused').hidden = !G.paused;
   if (G.paused) $('#resume').focus();
   else $('#resume').blur();
 }
 window.addEventListener('keydown', ev => {
   if (!G || !S) return;
+  if (ev.target.closest && ev.target.closest('#sound-controls')) return;
   if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return;
   const k = ev.key.toLowerCase();
   if (k === 'p') {
@@ -8726,6 +9378,7 @@ $('#menu').addEventListener('click', () => {
   document.body.classList.remove('result-open');
   $('#brief').hidden = false;
   setMenuOpen(true);
+  GameAudio.apply();
   $('#brief [data-diff="standard"]').focus();
 });
 // The canvas has DPR device pixels per screen point, so it stays sharp on phones; Phaser's zoom shrinks it back to fit.
@@ -8736,6 +9389,8 @@ const stageSize = () => {
 const [stageW, stageH] = stageSize();
 game = new Phaser.Game({
   type: Phaser.AUTO,
+  // Our single audio engine owns sound and browser gesture handling.
+  audio: { noAudio: true },
   parent: 'stage',
   backgroundColor: '#0c0907',
   scale: { mode: Phaser.Scale.NONE, width: stageW, height: stageH, zoom: 1 / DPR },

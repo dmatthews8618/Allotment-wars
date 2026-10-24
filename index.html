@@ -18,6 +18,43 @@
     <div id="app">
       <div id="game">
         <div id="stage">
+          <div id="sound-controls" class="sound-controls">
+            <div class="sound-buttons">
+              <button id="sound-toggle" type="button" aria-pressed="false" aria-label="Mute game sound">
+                Sound on
+              </button>
+              <button
+                id="sound-settings"
+                type="button"
+                aria-expanded="false"
+                aria-controls="sound-panel"
+                aria-label="Sound settings"
+              >
+                ⚙
+              </button>
+            </div>
+            <section id="sound-panel" class="sound-panel" aria-label="Sound settings" hidden>
+              <h2>Garden sounds</h2>
+              <label for="audio-master"
+                >Master volume <output id="audio-master-value" for="audio-master">55%</output></label
+              >
+              <input id="audio-master" type="range" min="0" max="100" value="55" />
+              <label for="audio-effects"
+                >Effects <output id="audio-effects-value" for="audio-effects">75%</output></label
+              >
+              <input id="audio-effects" type="range" min="0" max="100" value="75" />
+              <label for="audio-ambience"
+                >Birds, breeze &amp; crickets
+                <output id="audio-ambience-value" for="audio-ambience">45%</output></label
+              >
+              <input id="audio-ambience" type="range" min="0" max="100" value="45" />
+              <label for="audio-music"
+                >Music · optional <output id="audio-music-value" for="audio-music">0%</output></label
+              >
+              <input id="audio-music" type="range" min="0" max="100" value="0" />
+              <p>Settings are remembered on this device.</p>
+            </section>
+          </div>
           <div class="field-label" aria-hidden="true">
             <span class="field-dot"></span> THE ALLOTMENTS
             <span>Scout the map. Destroy every enemy building.</span>
@@ -224,6 +261,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
     <script src="src/config.js"></script>
+    <script src="src/audio.js"></script>
     <script src="src/map.js"></script>
     <script src="src/art.js"></script>
     <script src="src/building-atlas-data.js"></script>

@@ -1692,3 +1692,110 @@ body.compact .garden-status {
 body.compact #hud-minislot {
   width: 100%;
 }
+
+/* Sound controls stay above the battlefield, including the pause overlay. */
+.sound-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+}
+.sound-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.sound-buttons button {
+  min-height: 36px;
+  padding: 7px 11px;
+  color: #e5e8d2;
+  background: #21342ded;
+  border: 1px solid #6d7b55;
+  border-radius: 7px;
+  font:
+    600 12px Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.sound-buttons button[aria-pressed='true'] {
+  color: #b9bea9;
+  background: #1a2926;
+}
+.sound-buttons button:focus-visible,
+.sound-panel input:focus-visible {
+  outline: 2px solid #e8d18a;
+  outline-offset: 3px;
+}
+#sound-settings {
+  min-width: 36px;
+  padding: 5px;
+  font-size: 20px;
+  line-height: 1;
+}
+.sound-panel {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  width: min(265px, calc(100vw - 48px));
+  padding: 18px;
+  background: linear-gradient(135deg, #304436, #152b23);
+  border: 1px solid #8b9870;
+  border-radius: 12px;
+  box-shadow: 0 12px 35px #07130dbb;
+  color: #ebe6ca;
+}
+.sound-panel h2 {
+  font-size: 12px;
+  margin: 0 0 15px;
+}
+.sound-panel label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font:
+    12px Arial,
+    sans-serif;
+  margin-top: 10px;
+}
+.sound-panel output {
+  color: #e4c975;
+  font-variant-numeric: tabular-nums;
+}
+.sound-panel input {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 3px 0;
+  accent-color: #d9c575;
+  cursor: pointer;
+}
+.sound-panel p {
+  font:
+    11px/1.5 Arial,
+    sans-serif;
+  color: #b5c4aa;
+  margin: 9px 0 0;
+}
+body.menu-open .sound-controls,
+body.result-open .sound-controls {
+  display: none;
+}
+body.compact .sound-controls {
+  top: auto;
+  bottom: 8px;
+  right: 8px;
+}
+body.compact .sound-buttons button {
+  min-height: 40px;
+}
+body.compact .sound-panel {
+  top: auto;
+  bottom: 47px;
+  max-height: calc(100dvh - 190px);
+  overflow-y: auto;
+}
+@media (max-height: 540px) {
+  body.compact .sound-panel {
+    max-height: calc(100dvh - 90px);
+  }
+}

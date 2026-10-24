@@ -102,6 +102,7 @@ node tools/map_check.js
 python3 tools/spawn_check.py
 python3 tools/daylight_check.py
 python3 tools/objectives_check.py
+python3 tools/audio_check.py
 python3 tools/checks.py
 python3 tools/playtest.py
 ```
@@ -127,3 +128,5 @@ Terrain and boundary artwork is documented in [docs/garden-art.md](docs/garden-a
 Matches now follow an eight-minute visual day/night cycle: warm afternoon, sunset, moonlight and dawn. Windows and entrance lanterns glow at night, fireflies gather near crops, and ponds catch the changing light. Pause holds the cycle; reduced-motion preferences quiet the new effects. Lighting does not change gameplay or fog of war.
 
 Three capturable community gardens add territorial objectives. Scout their gold map diamonds, hold a flag with fighting units, and earn 75 compost every 30 seconds while secure. Opposing troops pause capture and income. The Gardens control cycles between discovered plots, and the enemy sends squads to contest them. See [community garden rules](docs/community-gardens.md).
+
+Original game audio includes garden ambience, battle effects, building and compost cues, and result fanfares. Use **Sound** to mute or its settings button for independent effects, ambience and optional music levels. Settings are remembered on this device. Audio starts after interaction and pauses with the match. See [sound design](docs/audio.md).

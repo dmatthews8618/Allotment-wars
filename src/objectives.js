@@ -46,6 +46,7 @@ function updGardens(dt) {
             g.seen = true;
             g.knownOwner = 0;
             G.stats.gardensCaptured++;
+            GameAudio.sound('capture', 0, 0, true);
           }
           if (!G.headless && (team === 0 || previous === 0 || gardenVisible(g)))
             announce(
