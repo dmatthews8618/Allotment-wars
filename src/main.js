@@ -6,6 +6,8 @@ function togglePause() {
   if (!G || G.over) return;
   G.paused = !G.paused;
   $('#paused').hidden = !G.paused;
+  if (G.paused) $('#resume').focus();
+  else $('#resume').blur();
 }
 window.addEventListener('keydown', ev => {
   if (!G || !S) return;
@@ -124,6 +126,8 @@ function layout() {
 }
 if (MQ.addEventListener) MQ.addEventListener('change', layout);
 else MQ.addListener(layout);
+$('#mini').height = Math.round($('#mini').width * MH / MW);
+$('#mini').style.aspectRatio = MW + ' / ' + MH;
 layout();
 for (const b of document.querySelectorAll('.tab[data-tab]'))
   b.addEventListener('click', () => {
@@ -139,6 +143,8 @@ for (const b of document.querySelectorAll('[data-cmd]'))
   });
 $('#paused').addEventListener('click', togglePause);
 function start(diff) {
+  setMenuOpen(false);
+  document.body.classList.remove('result-open');
   $('#brief').hidden = true;
   $('#over').hidden = true;
   $('#paused').hidden = true;
@@ -152,7 +158,10 @@ document
 $('#again').addEventListener('click', () => start(G ? G.diffKey : 'standard'));
 $('#menu').addEventListener('click', () => {
   $('#over').hidden = true;
+  document.body.classList.remove('result-open');
   $('#brief').hidden = false;
+  setMenuOpen(true);
+  $('#brief [data-diff="standard"]').focus();
 });
 // The canvas has DPR device pixels per screen point, so it stays sharp on phones; Phaser's zoom shrinks it back to fit.
 const stageSize = () => {
@@ -165,7 +174,8 @@ game = new Phaser.Game({
   parent: 'stage',
   backgroundColor: '#0c0907',
   scale: { mode: Phaser.Scale.NONE, width: stageW, height: stageH, zoom: 1 / DPR },
-  render: { antialias: true },
+  // Phaser otherwise enables pixel-art mode whenever scale.zoom differs from 1 (our DPR fix).
+  render: { antialias: true, pixelArt: false, roundPixels: false },
   banner: false,
   input: { mouse: { preventDefaultWheel: true } },
 });

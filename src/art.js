@@ -1030,7 +1030,7 @@ function drawTerrain() {
   const R = mulberry32(G.seed ^ 0x5bd1);
   const terr = G.terr;
   const at = (tx, ty) => (inb(tx, ty) ? terr[idx(tx, ty)] : 3);
-  x.fillStyle = '#4e7c34';
+  x.fillStyle = '#52783d';
   x.fillRect(0, 0, WW, WH);
   for (let i = 0; i < 1100; i++) {
     const cx = R() * WW,
@@ -1057,7 +1057,7 @@ function drawTerrain() {
       by = R() * WH;
     const t = terr[idx(tileOf(bx), tileOf(by))];
     if (t !== 0 && t !== 5) continue;
-    x.strokeStyle = R() < 0.5 ? 'rgba(170,210,115,.28)' : 'rgba(30,60,20,.22)';
+    x.strokeStyle = R() < 0.5 ? 'rgba(185,211,139,.22)' : 'rgba(30,60,28,.18)';
     x.beginPath();
     x.moveTo(bx, by);
     x.lineTo(bx + R() * 3 - 1.5, by - 3 - R() * 4);
@@ -1092,16 +1092,45 @@ function drawTerrain() {
       x.fillStyle = 'rgba(150,110,75,.25)';
       x.fillRect(px, py + 4 + r * 8, T, 1);
     }
-    for (let r = 0; r < 4; r++)
-      if (R() < 0.8)
-        for (let k = 0; k < 3; k++) {
-          const cx = px + 5 + k * 11 + R() * 2,
-            cy = py + 3 + r * 8;
-          circ(x, cx - 1.3, cy, 1.7, '#5f9a3a');
-          circ(x, cx + 1.3, cy, 1.7, '#5f9a3a');
-          circ(x, cx, cy - 1.2, 1.6, '#8cc95a');
+    // Each bed has its own crop, with planted shadows and sunlit leaves.
+    const crop = (Math.floor((i % MW) / 4) + Math.floor(i / MW / 4)) % 3;
+    for (let r = 0; r < 3; r++)
+      for (let k = 0; k < 3; k++) {
+        const cx = px + 5 + k * 11,
+          cy = py + 5 + r * 10;
+        ell(x, cx + 1, cy + 2, 4.4, 2.5, 'rgba(17,29,15,.45)');
+        if (crop === 0) {
+          ell(x, cx - 1.5, cy, 3, 2.1, '#6f9849', -0.5);
+          ell(x, cx + 1.5, cy, 3, 2.1, '#4b7939', 0.5);
+          circ(x, cx, cy - 1, 2.1, '#a2bb69');
+          line(x, cx, cy - 2, cx, cy + 1, '#cee0a0', 0.6);
+        } else if (crop === 1) {
+          circ(x, cx, cy + 1, 2.6, '#b86b30');
+          line(x, cx, cy, cx - 3, cy - 4, '#80a34b', 1.4);
+          line(x, cx, cy, cx + 2, cy - 5, '#a5bd61', 1.4);
+          line(x, cx, cy, cx + 4, cy - 2, '#5b8a3d', 1.4);
+        } else {
+          ell(x, cx, cy, 4.1, 3.3, '#728b56');
+          ell(x, cx - 1, cy - 1, 2.8, 2.2, '#a6b982');
+          circ(x, cx, cy - 1, 1.5, '#ccd3a1');
+          line(x, cx - 2, cy + 1, cx + 1, cy - 2, '#7a9961', 0.7);
         }
+      }
+    const tx = i % MW,
+      ty = (i / MW) | 0;
+    // Timber only at the perimeter: adjacent tiles still read as a single bed.
+    for (const [dx, dy, ax, ay, bx, by] of [
+      [0, -1, 0, 0, T, 0],
+      [0, 1, 0, T, T, T],
+      [-1, 0, 0, 0, 0, T],
+      [1, 0, T, 0, T, T],
+    ]) {
+      if (at(tx + dx, ty + dy) === 4) continue;
+      line(x, px + ax, py + ay + 1, px + bx, py + by + 1, '#302a1c', 4);
+      line(x, px + ax, py + ay, px + bx, py + by, '#a08b59', 2);
+    }
   }
+
   // paths: one continuous band joining neighbouring path tiles, with soft edges and gravel speckle
   const pathSegs = [];
   for (let i = 0; i < MW * MH; i++) {
@@ -1161,13 +1190,13 @@ function drawTerrain() {
   const ponds = [];
   for (let i = 0; i < MW * MH; i++) if (terr[i] === 2) ponds.push(i);
   for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2 + 2, T * 0.9, '#5c4a30');
-  for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.8, '#2a5d78');
+  for (const i of ponds) circ(x, (i % MW) * T + T / 2, ((i / MW) | 0) * T + T / 2, T * 0.8, '#397b85');
   for (const i of ponds) {
     const tx = i % MW,
       ty = (i / MW) | 0;
     let deep = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (at(tx + dx, ty + dy) === 2) deep++;
-    if (deep >= 8) circ(x, tx * T + T / 2, ty * T + T / 2, T * 0.75, '#1f4c66');
+    if (deep >= 8) circ(x, tx * T + T / 2, ty * T + T / 2, T * 0.75, '#285d70');
   }
   for (const i of ponds) {
     const px = (i % MW) * T,
@@ -1221,11 +1250,24 @@ function drawTerrain() {
         px + 4 + R() * 24,
         py + 4 + R() * 24,
         1.6 + R() * 1.8,
-        a < 0.45 ? '#3d7232' : a < 0.8 ? '#18331a' : '#4f8a3e'
+        a < 0.45 ? '#4b7941' : a < 0.8 ? '#224532' : '#7a9752'
       );
     }
     if (R() < 0.12) for (let k = 0; k < 3; k++) circ(x, px + 6 + R() * 20, py + 6 + R() * 20, 1.3, '#f4f0e4');
   }
+  const foliageR = mulberry32(G.seed ^ 0x427a);
+  for (const i of hedges) {
+    const px = (i % MW) * T,
+      py = ((i / MW) | 0) * T;
+    for (let k = 0; k < 5; k++) {
+      const lx = px + 5 + foliageR() * 21,
+        ly = py + 4 + foliageR() * 20;
+      ell(x, lx, ly, 3.2, 1.8, k % 2 ? '#668b49' : '#365e35', foliageR() * 3);
+      line(x, lx - 1, ly, lx + 1, ly - 0.5, 'rgba(190,208,130,.28)', 0.6);
+    }
+  }
+  x.fillStyle = lin(x, 0, 0, WW, WH, ['rgba(247,217,138,.07)', 'rgba(34,67,54,.03)']);
+  x.fillRect(0, 0, WW, WH);
   if (S.textures.exists('terrain')) S.textures.remove('terrain');
   S.textures.addCanvas('terrain', cv);
   return cv;

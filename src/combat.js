@@ -102,6 +102,7 @@ function updProj(dt) {
 }
 function impact(p) {
   const tex = p.kind === 'drop' ? 'splash' : p.kind === 'bees' ? 'buzz' : 'splat';
+  impactAccent(p);
   if (p.splash) {
     const R = p.splash * T;
     for (const o of G.ents) {
@@ -121,6 +122,34 @@ function impact(p) {
     }
     fx(p.tx, p.ty, tex, 0.45, 0.3);
   }
+}
+// One short-lived drawing per impact: directional droplets, pumpkin fragments or bee sparks.
+// Uses fixed angles so visual detail cannot perturb the simulation's random sequence.
+function impactAccent(p) {
+  if (G.headless || !visibleToPlayerPt(p.tx, p.ty)) return;
+  const water = p.kind === 'drop',
+    bees = p.kind === 'bees';
+  const col = water ? 0xc3ecf0 : bees ? 0xeed481 : p.kind === 'pumpkin' ? 0xe9a04d : 0xc0a074;
+  const g = S.add.graphics().setPosition(p.tx, p.ty).setDepth(4.55);
+  const radius = p.splash ? 18 : 9;
+  g.lineStyle(1.2, col, 0.65);
+  g.strokeEllipse(0, 0, radius * 1.8, radius);
+  g.fillStyle(col, 0.85);
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3 + p.tx * 0.03;
+    const x = Math.cos(a) * radius,
+      y = Math.sin(a) * radius * 0.6;
+    if (water || bees) g.fillCircle(x, y, water ? 1.5 : 1);
+    else g.fillRect(x, y, 3, 2);
+  }
+  S.tweens.add({
+    targets: g,
+    scale: 1.7,
+    alpha: 0,
+    duration: water ? 280 : 420,
+    ease: 'Cubic.Out',
+    onComplete: () => g.destroy(),
+  });
 }
 function damage(t, amt, ak, src) {
   if (t.dead) return;

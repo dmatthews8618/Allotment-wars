@@ -79,6 +79,7 @@ class Main extends Phaser.Scene {
     G.fogTex = this.textures.get('fog');
     G.fogCtx = G.fogTex.getContext();
     G.fogImg = G.fogCtx.createImageData(MW, MH);
+    G.fogTex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.add.image(0, 0, 'fog').setOrigin(0).setScale(T).setDepth(8);
     G.miniCv = document.createElement('canvas');
     G.miniCv.width = MW;
@@ -114,7 +115,7 @@ class Main extends Phaser.Scene {
     updVis();
     const cam = this.cameras.main;
     setCamBounds();
-    cam.setBackgroundColor('#0c0907');
+    cam.setBackgroundColor('#14221c');
     zoomTo(
       document.body.classList.contains('compact') && Math.min(this.scale.width, this.scale.height) < 420 * DPR
         ? 0.85
@@ -418,17 +419,29 @@ class Main extends Phaser.Scene {
     const bar = (e, w, y) => {
       const f = clamp(e.hp / e.maxHp, 0, 1);
       g.fillStyle(0x140f0b, 0.85);
-      g.fillRect(e.x - w / 2 - 1, y - 1, w + 2, 5);
+      g.fillRoundedRect(e.x - w / 2 - 2, y - 2, w + 4, 7, 2);
       g.fillStyle(f > 0.6 ? 0x7ccf4a : f > 0.3 ? 0xe8c547 : 0xe0503c, 1);
       g.fillRect(e.x - w / 2, y, w * f, 3);
+      g.fillStyle(0xffffff, 0.3);
+      g.fillRect(e.x - w / 2, y, w * f, 1);
     };
+    // Small team pips anchor troops against busy planting without covering their art.
+    for (const e of G.ents) {
+      if (e.dead || !e.unit || !e.spr.visible || G.sel.includes(e)) continue;
+      sg.fillStyle(0x10251b, 0.7);
+      sg.fillEllipse(e.x, e.y + e.d.r + 3, 9, 4);
+      sg.fillStyle(TEAM[e.team].sel, 0.9);
+      sg.fillEllipse(e.x, e.y + e.d.r + 3, 6, 2);
+    }
     for (const e of G.sel) {
       if (e.dead) continue;
       const col = TEAM[e.team].sel;
       if (e.unit) {
         // a disc on the ground under the unit, so a crowd stays readable
-        sg.fillStyle(col, 0.28);
+        sg.fillStyle(col, 0.16);
         sg.fillEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
+        sg.lineStyle(3.5, 0x10251b, 0.65);
+        sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 8, e.d.r * 1.3 + 7);
         sg.lineStyle(1.5, col, 0.95);
         sg.strokeEllipse(e.x, e.y + 3, e.d.r * 2 + 6, e.d.r * 1.3 + 5);
         if (e.hp < e.maxHp) bar(e, 20, e.y - e.d.r - 9);

@@ -52,9 +52,25 @@ function marker(x, y, col) {
   if (G.headless) return;
   const g = S.add.graphics().setDepth(6);
   g.lineStyle(2, col, 1);
-  g.strokeCircle(0, 0, 10);
+  g.strokeEllipse(0, 0, 24, 15);
+  g.fillStyle(col, 0.2);
+  g.fillEllipse(0, 0, 24, 15);
+  for (const [dx, dy] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ])
+    g.lineBetween(dx * 16, dy * 11, dx * 22, dy * 17);
   g.setPosition(x, y);
-  S.tweens.add({ targets: g, scale: 0.2, alpha: 0, duration: 450, onComplete: () => g.destroy() });
+  S.tweens.add({
+    targets: g,
+    scale: 0.55,
+    alpha: 0,
+    duration: 650,
+    ease: 'Cubic.Out',
+    onComplete: () => g.destroy(),
+  });
 }
 function wallRun(sx, sy, ex, ey) {
   const out = [];
