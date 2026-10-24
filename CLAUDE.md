@@ -13,7 +13,7 @@ Dave owns this project. He has no programming background, so explain changes in 
 - `G.headless` skips visuals. `window.__AW` exposes internals for `tools/playtest.py`.
 
 ## Workflow
-- After changes run `python3 tools/playtest.py` (needs `npm install` and Playwright). Gentle should be a win for the scripted player, Ruthless a loss.
+- After changes run `python3 tools/checks.py` then `python3 tools/playtest.py` (needs `npm install` and Playwright). Both must pass. Matches are seeded and frozen via `window.__AWfreeze`, so results are repeatable. Add a check to `checks.py` for any rule you fix or add.
 - Then `python3 tools/build.py` and republish `dist/allotment-wars.html` to the existing artifact: https://claude.ai/artifact/U4ZEAiVUW67ehDRjALzxyy
 - The live site is GitHub Pages from `main`: https://dmatthews8618.github.io/Allotment-wars/
 

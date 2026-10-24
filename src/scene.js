@@ -27,7 +27,7 @@ class Main extends Phaser.Scene{
     PF.team=1;for(let i=0;i<2;i++){const t=ringFree(ebin,{x:ebin.x-T*3,y:ebin.y+T*(i*2)});const b=addUnit(1,'barrow',t[0]*T+T/2,t[1]*T+T/2);b.hs='seek';}
     const ehq=G.ents.find(e=>e.team===1&&e.kind==='hq');
     const ft=freeTilesAround(ehq.tx-2,ehq.ty+5,D.extra.length);D.extra.forEach((k,i)=>{const t=ft[i];if(t)addUnit(1,k,t[0]*T+T/2,t[1]*T+T/2);});
-    G.started=true;updVis();
+    G.started=true;if(window.__AWfreeze)G.paused=true;updVis();
     const cam=this.cameras.main;setCamBounds();cam.setBackgroundColor('#0c0907');if(document.body.classList.contains('compact')&&Math.min(this.scale.width,this.scale.height)<420)cam.setZoom(.85);centreOn(6.5*T,39.5*T+60);
     this.ov=this.add.graphics().setDepth(7);this.box=this.add.graphics().setDepth(20).setScrollFactor(0);
     this.ghost=this.add.image(0,0,'water_0').setAlpha(.6).setVisible(false).setDepth(6.5);

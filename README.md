@@ -73,7 +73,9 @@ src/
   main.js         start-up, menus and layout
 tools/
   build.py        bundles everything into one file for the claude.ai version
-  playtest.py     plays scripted matches in a hidden browser to check balance
+  checks.py       set-piece tests of the game's rules
+  playtest.py     plays fixed-seed matches in a hidden browser to check balance
+  harness.py      shared set-up for those two
 ```
 
 The scripts load in the order listed in `index.html` and share their top-level names, so that order matters.
@@ -87,9 +89,14 @@ Download the repo and open `index.html` in a browser. You need an internet conne
 ```
 npm install
 pip install playwright
+python3 tools/checks.py
 python3 tools/playtest.py
 ```
 
-The playtest plays one match on each difficulty with a simple scripted player and reports the result. It fails if the game throws any errors.
+`checks.py` runs set-piece scenarios that test the game's rules: units route round new buildings, fences and gates block the right side, catapults keep their minimum range, wheelbarrows only pay into a bin that still exists.
+
+`playtest.py` plays fixed-seed matches on each difficulty with a simple scripted player. It must win every Gentle match and lose every Ruthless one; Standard is reported but not enforced. The same seed always plays out the same way, so a failure can be replayed.
+
+Both fail if the game throws any errors.
 
 To refresh the single-file version used on claude.ai, run `python3 tools/build.py` and publish `dist/allotment-wars.html`.

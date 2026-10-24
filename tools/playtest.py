@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""Headless playtest: plays scripted matches in Chromium and reports the results.
+"""Balance playtest: a simple scripted player plays fixed-seed matches on each
+difficulty, and the run fails if the results land outside the expected range.
 
 Setup once:  npm install            (fetches Phaser for offline testing)
              pip install playwright
-Usage:       python3 tools/playtest.py            (all three difficulties)
-             python3 tools/playtest.py gentle
+Usage:       python3 tools/playtest.py              all difficulties, seeds 1-3
+             python3 tools/playtest.py gentle       one difficulty
+             python3 tools/playtest.py --seeds 4,5  other maps
 
-The scripted player is deliberately simple: it builds a standard base, keeps
-two wheelbarrows going, trains a mixed army and attacks after seven minutes.
-It should win on Gentle; Standard is a coin toss depending on the map, and
-Ruthless should beat it. Any page error fails
-the run.
+The scripted player builds a standard base, keeps two wheelbarrows going,
+trains a mixed army and attacks after seven minutes. A beginner who does that
+should beat Gentle, Ruthless should beat them, and Standard is reported but
+not enforced. The same seed always plays out the same way, so a failure can be
+replayed. Any page error also fails the run.
 """
 import asyncio
-import pathlib
 import sys
 
 from playwright.async_api import async_playwright
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-PHASER_CDN = "https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"
-PHASER_LOCAL = ROOT / "node_modules/phaser/dist/phaser.min.js"
+from harness import LAUNCH_ARGS, open_match
+
+EXPECT = {"gentle": True, "standard": None, "ruthless": False}   # True = player must win, False = must lose, None = report only
 
 SIM = """() => {
   const A = window.__AW, G = A.G;
@@ -52,37 +53,35 @@ SIM = """() => {
 }"""
 
 
-async def play(browser, diff):
-    page = await browser.new_page(viewport={"width": 1400, "height": 860})
-    errors = []
-    page.on("pageerror", lambda e: errors.append(str(e)))
-    if PHASER_LOCAL.exists():
-        await page.route(PHASER_CDN, lambda route: route.fulfill(path=str(PHASER_LOCAL), content_type="text/javascript"))
-    await page.route("https://fonts.*/**", lambda route: route.abort())
-    await page.goto((ROOT / "index.html").as_uri())
-    await page.wait_for_timeout(500)
-    await page.click(f'[data-diff="{diff}"]')
-    await page.wait_for_timeout(600)
-    result = await page.evaluate(SIM)
-    await page.close()
-    return result, errors
-
-
-async def main(diffs):
-    failed = False
+async def main(diffs, seeds):
+    failed = 0
     async with async_playwright() as p:
-        browser = await p.chromium.launch(args=["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"])
+        browser = await p.chromium.launch(args=LAUNCH_ARGS)
         for diff in diffs:
-            result, errors = await play(browser, diff)
-            outcome = {True: "won", False: "lost", None: "unfinished"}[result["won"]]
-            s = result["stats"]
-            print(f"{diff:9} {outcome:10} {result['minutes']:>5} min  hauled {s['harvested']:>6}  flattened {s['killed']:>3}  lost {s['lost']:>3}")
-            for e in errors:
-                print("   page error:", e)
-                failed = True
+            for seed in seeds:
+                page, errors = await open_match(browser, diff, seed)
+                r = await page.evaluate(SIM)
+                await page.close()
+                want = EXPECT[diff]
+                ok = not errors and (want is None or r["won"] is want)
+                failed += not ok
+                outcome = {True: "won", False: "lost", None: "unfinished"}[r["won"]]
+                s = r["stats"]
+                flag = "    " if want is None else ("ok  " if ok else "FAIL")
+                print(f"{flag} {diff:9} seed {seed:<3} {outcome:10} {r['minutes']:>5} min  "
+                      f"hauled {s['harvested']:>6}  flattened {s['killed']:>3}  lost {s['lost']:>3}")
+                for e in errors:
+                    print("     page error:", e)
         await browser.close()
+    print("\nAll balance expectations met." if not failed else f"\n{failed} run(s) outside expectations.")
     sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":
-    asyncio.run(main(sys.argv[1:] or ["gentle", "standard", "ruthless"]))
+    args = sys.argv[1:]
+    seeds = [1, 2, 3]
+    if "--seeds" in args:
+        i = args.index("--seeds")
+        seeds = [int(x) for x in args[i + 1].split(",")]
+        del args[i:i + 2]
+    asyncio.run(main(args or list(EXPECT), seeds))

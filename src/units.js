@@ -7,13 +7,20 @@ function moveAlong(e,dt){
   const p=e.path[0],dx=p.x-e.x,dy=p.y-e.y,dd=Math.hypot(dx,dy);const sp=e.d.speed*dt*(e.soakT>0?.5:1);
   if(dd>.5){const ah=Math.min(dd,e.d.r+5),ax=e.x+dx/dd*ah,ay=e.y+dy/dd*ah,ti=idx(tileOf(ax),tileOf(ay));
     if(G.blocked[ti]&&G.gateTeam[ti]!==e.team&&G.bldAt[ti]!==G.bldAt[idx(tileOf(e.x),tileOf(e.y))]){
-      const wid=G.wallAt[ti];if(wid&&G.wallTeam[ti]!==e.team&&!e.d.harv){const w=G.ents.find(o=>o.id===wid&&!o.dead);if(w){e.breach=w;return true;}}}}
+      const wid=G.wallAt[ti];if(wid&&G.wallTeam[ti]!==e.team&&!e.d.harv){const w=G.ents.find(o=>o.id===wid&&!o.dead);if(w){e.breach=w;return true;}}
+      // Something was built across the route since it was planned: plan a new one rather than walking through it.
+      if(G.time-(e.rerouteT??-9)>.5){e.rerouteT=G.time;const last=e.path[e.path.length-1];setPath(e,last.x,last.y);}
+      return e.path.length>0;}}
   if(dd<=sp){e.x=p.x;e.y=p.y;e.path.shift();}else{e.x+=dx/dd*sp;e.y+=dy/dd*sp;}
   if(dd>.5)e.ang=turn(e.ang,Math.atan2(dy,dx),dt*9);
   e.stuck+=dt;if(e.stuck>1){const m=Math.hypot(e.x-e.lastX,e.y-e.lastY);e.lastX=e.x;e.lastY=e.y;e.stuck=0;
     if(m<6&&e.path.length){e.stuckN++;const last=e.path[e.path.length-1];if(e.stuckN>3){e.path=[];e.stuckN=0;}else setPath(e,last.x,last.y);}else e.stuckN=0;}
   return true;
 }
+// Step directly away from t (used when a target is inside a unit's minimum range). Returns false if the way back is blocked.
+function backOff(e,t,dt){const a=angTo(e,t)+Math.PI,st=e.d.speed*dt*(e.soakT>0?.5:1),nx=e.x+Math.cos(a)*st,ny=e.y+Math.sin(a)*st;
+  const tx=tileOf(nx),ty=tileOf(ny);e.ang=turn(e.ang,angTo(e,t),dt*12);PF.team=e.team;
+  if(!inb(tx,ty)||!passable(idx(tx,ty)))return false;e.x=nx;e.y=ny;return true;}
 function findTarget(e,rangeTiles){
   const R=rangeTiles*T,ak=e.kind;let best=null,bd=1e9;
   for(const o of G.ents){if(o.dead||o.team===e.team||isWall(o))continue;const arm=o.bld?'bld':o.d.armor;if(!MULT[ak][arm])continue;
@@ -24,7 +31,10 @@ function findTarget(e,rangeTiles){
 function updUnit(e,dt){
   const d=e.d;e.cd-=dt;e.repT-=dt;e.scanT-=dt;
   if(e.breach){const w=e.breach;if(w.dead){e.breach=null;if(e.dest)setPath(e,e.dest.x,e.dest.y);}
-    else if(distTo(e,w)<=Math.max(d.range,1.2)*T+d.r){e.ang=turn(e.ang,angTo(e,w),dt*12);if(e.cd<=0){fire(e,w);e.cd=d.cd;}return;}else e.breach=null;}
+    else{const dw=distTo(e,w);
+      if(d.minRange&&dw<d.minRange*T){if(!backOff(e,w,dt)){e.breach=null;e.path=[];e.order=null;e.guard={x:e.x,y:e.y};}return;}
+      if(dw<=Math.max(d.range,1.2)*T+d.r){e.ang=turn(e.ang,angTo(e,w),dt*12);if(e.cd<=0){fire(e,w);e.cd=d.cd;}return;}
+      e.breach=null;}}
   if(e.target&&e.target.dead)e.target=null;
   const o=e.order;
   if(o&&o.type==='attack'){if(o.t.dead){e.order=null;e.target=null;e.guard={x:e.x,y:e.y};}else e.target=o.t;}
@@ -33,6 +43,7 @@ function updUnit(e,dt){
   if(e.target){
     const t=e.target,dist=distTo(e,t);const forced=e.order&&e.order.type==='attack';
     if(d.minRange&&dist<d.minRange*T&&!forced){e.target=null;}
+    else if(d.minRange&&dist<d.minRange*T){if(!backOff(e,t,dt)){e.order=null;e.target=null;}return;}
     else if(dist<=d.range*T+(t.unit?t.d.r*.5:0)+d.r*.5&&!(d.minRange&&dist<d.minRange*T)){e.path=null;e.chase=false;e.ang=turn(e.ang,angTo(e,t),dt*12);if(e.cd<=0){fire(e,t);e.cd=d.cd;}return;}
     else{
       if(!e.order&&e.guard&&Math.hypot(e.x-e.guard.x,e.y-e.guard.y)>(d.sight+8)*T){e.target=null;e.chase=false;setPath(e,e.guard.x,e.guard.y);}
@@ -70,7 +81,7 @@ function updHarv(e,dt){
     case'return':{const bin=e.forceBin&&!e.forceBin.dead?e.forceBin:nearestOwn(e,'bin');e.forceBin=null;if(!bin){e.hs='idle';e.ht=3;break;}
       e.bin=bin;setPath(e,bin.x,bin.y);e.hs='toBin';break;}
     case'toBin':if(!e.bin||e.bin.dead){e.hs='return';break;}if(!moveAlong(e,dt)){if(rectDist(e.x,e.y,e.bin)<T*1.15){e.hs='unload';e.ht=1.2;e.ang=angTo(e,e.bin);}else{e.hs='idle';e.ht=1;}}break;
-    case'unload':if(e.ht<=0){const amt=Math.round(e.load*(e.team===1?G.D.inc:G.D.pinc));G.money[e.team]+=amt;
+    case'unload':if(!e.bin||e.bin.dead){e.hs='return';break;}if(e.ht<=0){const amt=Math.round(e.load*(e.team===1?G.D.inc:G.D.pinc));G.money[e.team]+=amt;
       if(e.team===0){G.stats.harvested+=amt;floatText(e.x,e.y-16,'+'+amt);}e.load=0;e.hs='seek';}break;
   }
 }
