@@ -1,0 +1,4 @@
+/* Page reset for the standalone version. The claude.ai artifact supplies its own, so tools/build.py leaves this file out. */
+:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+body{margin:0;font-size:14px;font-family:system-ui,sans-serif}
+img{max-width:100%}

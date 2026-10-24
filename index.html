@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Allotment Wars</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Rubik+Dirt&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="game">
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    <div id="brief" class="screen">
+      <div class="card">
+        <div class="kicker">Plot Holders v Tidy Lawns Society</div>
+        <h1>Allotment Wars</h1>
+        <p>The Tidy Lawns Society wants the allotments flattened into a bowling green. Haul compost, plant a base and send the volunteers in. Flatten their Clubhouse before they flatten your shed.</p>
+        <div class="diffs">
+          <button class="diff" type="button" data-diff="gentle">Gentle<span>Small, slow attacks. Good for learning.</span></button>
+          <button class="diff" type="button" data-diff="standard">Standard<span>A fair fight over the compost.</span></button>
+          <button class="diff" type="button" data-diff="ruthless">Ruthless<span>The committee means business.</span></button>
+        </div>
+        <div class="mini-keys phone-tip"><b>On a phone:</b> tap to select and give orders, drag to look around, pinch to zoom. <b>Box</b> grabs a group, <b>All</b> selects every troop, double-tap a unit to grab all of that kind. Turn the phone sideways for more battlefield.</div>
+        <div class="mini-keys desk"><b>Start:</b> plant a Water Butt, then a Compost Bin (it comes with a wheelbarrow), then a Potting Shed. <b>Left click</b> selects and gives orders, <b>drag</b> to box-select, <b>right click</b> cancels. Fences go in with two clicks: start, then end.</div>
+      </div>
+    </div>
+    <div id="over" class="screen" hidden>
+      <div class="card">
+        <div class="kicker" id="over-kicker">Result</div>
+        <h1 id="over-title">The plot is yours</h1>
+        <p id="over-text"></p>
+        <div class="stats">
+          <div><b id="st-time">0:00</b><span>Time</span></div>
+          <div><b id="st-comp">0</b><span>Compost hauled</span></div>
+          <div><b id="st-kill">0</b><span>Flattened</span></div>
+          <div><b id="st-lost">0</b><span>Lost</span></div>
+        </div>
+        <div class="row"><button class="btn" id="again" type="button">Play again</button><button class="btn ghost" id="menu" type="button">Change difficulty</button></div>
+      </div>
+    </div>
+    <div id="paused" class="screen paused" hidden><div>Paused</div></div>
+    <div class="hud" id="hud">
+      <div class="hud-top"><div id="hud-res"></div><div id="selchip" class="selchip" hidden></div></div>
+      <div class="hud-mini"><div id="hud-minislot"></div><button class="cmd small" type="button" data-cmd="pause">Pause</button></div>
+      <div class="tray" id="tray">
+        <div class="tabs"><button class="tab on" type="button" data-tab="build">Build</button><button class="tab" type="button" data-tab="train">Train</button><button class="tab" type="button" data-tab="upg">Upgrade</button></div>
+        <div id="tray-slot"></div>
+      </div>
+      <div class="cmds" id="cmds">
+        <button class="cmd unitcmd" type="button" data-cmd="all">All</button>
+        <button class="cmd unitcmd" type="button" data-cmd="box">Box</button>
+        <button class="cmd unitcmd" type="button" data-cmd="amove">Attack</button>
+        <button class="cmd unitcmd" type="button" data-cmd="stop">Stop</button>
+        <button class="cmd bldcmd" type="button" data-cmd="repair">Repair</button>
+        <button class="cmd bldcmd" type="button" data-cmd="sell">Sell</button>
+        <button class="cmd" type="button" data-cmd="home">Home</button>
+        <button class="cmd" type="button" data-cmd="cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <aside id="side">
+    <header class="brand"><h1>Allotment Wars</h1><p>Plot Holders v Tidy Lawns</p></header>
+    <div id="slot-res"><section class="res">
+      <div class="stat"><span class="lbl">Compost</span><span id="money">0</span></div>
+      <div class="stat"><span class="lbl">Water<span class="long"> used / made</span></span><span id="wtext">0 / 0</span><div class="wbar" id="wbar"><i id="wfill"></i></div></div>
+    </section></div>
+    <div id="slot-mini"><canvas id="mini" width="192" height="144" aria-label="Minimap"></canvas></div>
+    <section><h2>Build</h2><div id="slot-build"><div id="build" class="packets"></div></div></section>
+    <section><h2>Train</h2><div id="slot-train"><div id="train" class="packets"></div></div></section>
+    <section><h2>Upgrade</h2><div id="slot-upg"><div id="upg" class="packets"></div></div></section>
+    <section id="info" class="info"><p>Select something to see it here.</p></section>
+    <details class="keys">
+      <summary>Controls</summary>
+      <dl>
+        <dt>Left click</dt><dd>Select, or order selected units to move, attack or harvest</dd>
+        <dt>Drag</dt><dd>Box-select units</dd>
+        <dt>Right click / Esc</dt><dd>Deselect, cancel planting</dd>
+        <dt>Fences</dt><dd>Click the start, then the end of a straight run</dd>
+        <dt>Packet right click</dt><dd>Cancel and refund</dd>
+        <dt>A, then click</dt><dd>Attack-move</dd>
+        <dt>S</dt><dd>Stop</dd>
+        <dt>Q</dt><dd>Select all troops</dd>
+        <dt>R</dt><dd>Repair selected building</dd>
+        <dt>H or Space</dt><dd>Jump to your shed</dd>
+        <dt>Shift + 1–5</dt><dd>Save a group</dd>
+        <dt>1–5</dt><dd>Recall group (twice to jump)</dd>
+        <dt>Arrows / edge</dt><dd>Scroll (or middle-drag)</dd>
+        <dt>Wheel</dt><dd>Zoom</dd>
+        <dt>P</dt><dd>Pause</dd>
+      </dl>
+    </details>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script src="src/config.js"></script>
+<script src="src/map.js"></script>
+<script src="src/art.js"></script>
+<script src="src/entities.js"></script>
+<script src="src/pathfinding.js"></script>
+<script src="src/units.js"></script>
+<script src="src/combat.js"></script>
+<script src="src/economy.js"></script>
+<script src="src/ai.js"></script>
+<script src="src/vision.js"></script>
+<script src="src/endgame.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/input.js"></script>
+<script src="src/ambience.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>

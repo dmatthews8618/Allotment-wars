@@ -1,0 +1,12 @@
+{
+  "name": "allotment-wars",
+  "private": true,
+  "description": "Browser real-time strategy game. Plot Holders v the Tidy Lawns Society.",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "playtest": "python3 tools/playtest.py"
+  },
+  "devDependencies": {
+    "phaser": "3.80.1"
+  }
+}
