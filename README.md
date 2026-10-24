@@ -2,7 +2,7 @@
 
 A real-time strategy game that runs in the browser. The Tidy Lawns Society wants the allotments flattened into a bowling green. You lead the Plot Holders: haul compost, plant a base, fence it in and send the volunteers out to flatten the Clubhouse.
 
-**Play it:** https://dmatthews8618.github.io/allotment-wars/
+**Play it:** https://dmatthews8618.github.io/Allotment-wars/
 
 It works with a mouse and keyboard or on a phone (landscape is best).
 

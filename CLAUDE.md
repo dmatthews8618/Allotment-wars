@@ -15,7 +15,7 @@ Dave owns this project. He has no programming background, so explain changes in 
 ## Workflow
 - After changes run `python3 tools/playtest.py` (needs `npm install` and Playwright). Gentle should be a win for the scripted player, Ruthless a loss.
 - Then `python3 tools/build.py` and republish `dist/allotment-wars.html` to the existing artifact: https://claude.ai/artifact/U4ZEAiVUW67ehDRjALzxyy
-- The live site is GitHub Pages from `main`: https://dmatthews8618.github.io/allotment-wars/
+- The live site is GitHub Pages from `main`: https://dmatthews8618.github.io/Allotment-wars/
 
 ## Known gaps / ideas
 - No sound. No campaign. The AI doesn't build fences and only rebuilds its starting layout.
