@@ -1,55 +1,358 @@
 // Settings and game data: teams, units, buildings, upgrades, difficulty levels, shared state and small helpers.
 'use strict';
 
-const $=s=>document.querySelector(s);
-const T=32, MW=64, MH=48, WW=MW*T, WH=MH*T, CAP=300;
-const TEAM=[{main:'#6aa83f',dark:'#3e6a24',light:'#b8e383',sel:0xb8e383,name:'Plot Holders'},
-            {main:'#c9493d',dark:'#7d2620',light:'#f4a493',sel:0xf4a493,name:'Tidy Lawns Society'}];
+const $ = s => document.querySelector(s);
+const T = 32,
+  MW = 64,
+  MH = 48,
+  WW = MW * T,
+  WH = MH * T,
+  CAP = 300;
+const TEAM = [
+  { main: '#6aa83f', dark: '#3e6a24', light: '#b8e383', sel: 0xb8e383, name: 'Plot Holders' },
+  { main: '#c9493d', dark: '#7d2620', light: '#f4a493', sel: 0xf4a493, name: 'Tidy Lawns Society' },
+];
 
-const UNITS={
-  fork:{names:['Fork Volunteer','Garden Gnome'],cost:100,hp:110,speed:58,sight:5,range:1.5,dmg:12,cd:.8,from:'shed',time:4,armor:'inf',r:7,proj:null,desc:'Cheap and pointy. Good in numbers.'},
-  hose:{names:['Hose Gunner','Sprinkler Gnome'],cost:220,hp:95,speed:54,sight:6,range:4,dmg:9,cd:.55,from:'shed',time:6,armor:'inf',r:7,proj:'drop',desc:'Soaks infantry. Weak against machinery.'},
-  barrow:{names:['Wheelbarrow','Clippings Cart'],cost:600,hp:320,speed:56,sight:4,range:0,from:'hq',time:9,armor:'veh',harv:true,r:11,desc:'Hauls compost to a Compost Bin.'},
-  tiller:{names:['Rotavator','Ride-on Mower'],cost:750,hp:480,speed:68,sight:6,range:3.4,dmg:34,cd:1.4,from:'tunnel',time:10,armor:'veh',r:13,proj:'clod',desc:'Tough. Chews through machinery.'},
-  cata:{names:['Pumpkin Catapult','Bowls Launcher'],cost:950,hp:210,speed:42,sight:7,range:7.5,minRange:2,dmg:70,cd:3.2,splash:1.2,from:'tunnel',time:12,armor:'veh',r:13,proj:'pumpkin',desc:'Long range, splash damage. Flattens buildings and fences.'}
+const UNITS = {
+  fork: {
+    names: ['Fork Volunteer', 'Garden Gnome'],
+    cost: 100,
+    hp: 110,
+    speed: 58,
+    sight: 5,
+    range: 1.5,
+    dmg: 12,
+    cd: 0.8,
+    from: 'shed',
+    time: 4,
+    armor: 'inf',
+    r: 7,
+    proj: null,
+    desc: 'Cheap and pointy. Good in numbers.',
+  },
+  hose: {
+    names: ['Hose Gunner', 'Sprinkler Gnome'],
+    cost: 220,
+    hp: 95,
+    speed: 54,
+    sight: 6,
+    range: 4,
+    dmg: 9,
+    cd: 0.55,
+    from: 'shed',
+    time: 6,
+    armor: 'inf',
+    r: 7,
+    proj: 'drop',
+    desc: 'Soaks infantry. Weak against machinery.',
+  },
+  barrow: {
+    names: ['Wheelbarrow', 'Clippings Cart'],
+    cost: 600,
+    hp: 320,
+    speed: 56,
+    sight: 4,
+    range: 0,
+    from: 'hq',
+    time: 9,
+    armor: 'veh',
+    harv: true,
+    r: 11,
+    desc: 'Hauls compost to a Compost Bin.',
+  },
+  tiller: {
+    names: ['Rotavator', 'Ride-on Mower'],
+    cost: 750,
+    hp: 480,
+    speed: 68,
+    sight: 6,
+    range: 3.4,
+    dmg: 34,
+    cd: 1.4,
+    from: 'tunnel',
+    time: 10,
+    armor: 'veh',
+    r: 13,
+    proj: 'clod',
+    desc: 'Tough. Chews through machinery.',
+  },
+  cata: {
+    names: ['Pumpkin Catapult', 'Bowls Launcher'],
+    cost: 950,
+    hp: 210,
+    speed: 42,
+    sight: 7,
+    range: 7.5,
+    minRange: 2,
+    dmg: 70,
+    cd: 3.2,
+    splash: 1.2,
+    from: 'tunnel',
+    time: 12,
+    armor: 'veh',
+    r: 13,
+    proj: 'pumpkin',
+    desc: 'Long range, splash damage. Flattens buildings and fences.',
+  },
 };
-const MULT={fork:{inf:1,veh:.6,bld:.5},hose:{inf:1.5,veh:.35,bld:.3},tiller:{inf:.8,veh:1.35,bld:.8},cata:{inf:.55,veh:.9,bld:1.7},
-  scare:{inf:.8,veh:1.25,bld:0},hive:{inf:1.6,veh:.25,bld:0},sprink:{inf:1,veh:.8,bld:0}};
-const BLDS={
-  hq:{names:['Allotment Shed','Clubhouse'],w:3,h:3,hp:1600,cost:0,power:10,time:0,req:null,sight:5,desc:'Plants every building and builds wheelbarrows. Lose it and you cannot build.'},
-  water:{names:['Water Butt','Sprinkler Pump'],w:2,h:2,hp:420,cost:300,power:100,time:7,req:'hq',sight:3,desc:'Makes 100 water. Run short and everything slows down.'},
-  bin:{names:['Compost Bin','Clippings Bin'],w:3,h:2,hp:900,cost:1000,power:-30,time:13,req:'water',sight:4,desc:'Wheelbarrows unload here. Comes with a free wheelbarrow.'},
-  shed:{names:['Potting Shed','Gnome Workshop'],w:2,h:2,hp:520,cost:300,power:-20,time:9,req:'water',sight:4,desc:'Trains volunteers. Select it and tap the ground to set a rally point.'},
-  tunnel:{names:['Polytunnel','Mower Garage'],w:3,h:3,hp:1000,cost:1200,power:-30,time:16,req:'bin',sight:4,desc:'Builds rotavators and catapults.'},
-  scare:{names:['Scarecrow','Topiary Turret'],w:1,h:1,hp:600,cost:500,power:-20,time:8,req:'shed',sight:7,range:6,dmg:26,cd:1,proj:'clod',desc:'Defence. Lobs heavy clods, best against machinery.'},
-  hive:{names:['Beehive','Wasp Nest'],w:1,h:1,hp:450,cost:600,power:-15,time:9,req:'shed',sight:6,range:5,dmg:13,cd:.9,splash:.9,proj:'bees',desc:'Defence. Swarms infantry. Useless against machinery.'},
-  sprink:{names:['Sprinkler Tower','Hose Turret'],w:1,h:1,hp:520,cost:700,power:-25,time:10,req:'bin',sight:8,range:7,dmg:9,cd:.7,soak:2.5,proj:'drop',desc:'Defence. Long range. Soaked units move at half speed.'},
-  wall:{names:['Picket Fence','Clipped Hedge'],w:1,h:1,hp:280,cost:25,power:0,time:0,req:'hq',sight:1,wall:true,desc:'25 per panel. Pick a start, then an end, to plant a straight run.'},
-  gate:{names:['Garden Gate','Hedge Arch'],w:1,h:1,hp:420,cost:75,power:0,time:0,req:'hq',sight:1,wall:true,gate:true,desc:'Your troops walk through it. Theirs have to break it down.'}
+const MULT = {
+  fork: { inf: 1, veh: 0.6, bld: 0.5 },
+  hose: { inf: 1.5, veh: 0.35, bld: 0.3 },
+  tiller: { inf: 0.8, veh: 1.35, bld: 0.8 },
+  cata: { inf: 0.55, veh: 0.9, bld: 1.7 },
+  scare: { inf: 0.8, veh: 1.25, bld: 0 },
+  hive: { inf: 1.6, veh: 0.25, bld: 0 },
+  sprink: { inf: 1, veh: 0.8, bld: 0 },
 };
-const UPGRADES={
-  barrows:{names:['Bigger Barrows','Bigger Carts'],cost:800,time:20,req:'bin',desc:'Wheelbarrows carry 50% more compost.'},
-  toecaps:{names:['Steel Toecaps','Iron Hats'],cost:600,time:18,req:'shed',desc:'Volunteers get 30% more health.'},
-  tines:{names:['Sharper Tines','Sharper Blades'],cost:900,time:22,req:'tunnel',desc:'Machinery does 25% more damage.'},
-  mulch:{names:['Mulch Armour','Lawn Armour'],cost:700,time:20,req:'hq',desc:'Buildings and fences get 30% more health.'}
+const BLDS = {
+  hq: {
+    names: ['Allotment Shed', 'Clubhouse'],
+    w: 3,
+    h: 3,
+    hp: 1600,
+    cost: 0,
+    power: 10,
+    time: 0,
+    req: null,
+    sight: 5,
+    desc: 'Plants every building and builds wheelbarrows. Lose it and you cannot build.',
+  },
+  water: {
+    names: ['Water Butt', 'Sprinkler Pump'],
+    w: 2,
+    h: 2,
+    hp: 420,
+    cost: 300,
+    power: 100,
+    time: 7,
+    req: 'hq',
+    sight: 3,
+    desc: 'Makes 100 water. Run short and everything slows down.',
+  },
+  bin: {
+    names: ['Compost Bin', 'Clippings Bin'],
+    w: 3,
+    h: 2,
+    hp: 900,
+    cost: 1000,
+    power: -30,
+    time: 13,
+    req: 'water',
+    sight: 4,
+    desc: 'Wheelbarrows unload here. Comes with a free wheelbarrow.',
+  },
+  shed: {
+    names: ['Potting Shed', 'Gnome Workshop'],
+    w: 2,
+    h: 2,
+    hp: 520,
+    cost: 300,
+    power: -20,
+    time: 9,
+    req: 'water',
+    sight: 4,
+    desc: 'Trains volunteers. Select it and tap the ground to set a rally point.',
+  },
+  tunnel: {
+    names: ['Polytunnel', 'Mower Garage'],
+    w: 3,
+    h: 3,
+    hp: 1000,
+    cost: 1200,
+    power: -30,
+    time: 16,
+    req: 'bin',
+    sight: 4,
+    desc: 'Builds rotavators and catapults.',
+  },
+  scare: {
+    names: ['Scarecrow', 'Topiary Turret'],
+    w: 1,
+    h: 1,
+    hp: 600,
+    cost: 500,
+    power: -20,
+    time: 8,
+    req: 'shed',
+    sight: 7,
+    range: 6,
+    dmg: 26,
+    cd: 1,
+    proj: 'clod',
+    desc: 'Defence. Lobs heavy clods, best against machinery.',
+  },
+  hive: {
+    names: ['Beehive', 'Wasp Nest'],
+    w: 1,
+    h: 1,
+    hp: 450,
+    cost: 600,
+    power: -15,
+    time: 9,
+    req: 'shed',
+    sight: 6,
+    range: 5,
+    dmg: 13,
+    cd: 0.9,
+    splash: 0.9,
+    proj: 'bees',
+    desc: 'Defence. Swarms infantry. Useless against machinery.',
+  },
+  sprink: {
+    names: ['Sprinkler Tower', 'Hose Turret'],
+    w: 1,
+    h: 1,
+    hp: 520,
+    cost: 700,
+    power: -25,
+    time: 10,
+    req: 'bin',
+    sight: 8,
+    range: 7,
+    dmg: 9,
+    cd: 0.7,
+    soak: 2.5,
+    proj: 'drop',
+    desc: 'Defence. Long range. Soaked units move at half speed.',
+  },
+  wall: {
+    names: ['Picket Fence', 'Clipped Hedge'],
+    w: 1,
+    h: 1,
+    hp: 280,
+    cost: 25,
+    power: 0,
+    time: 0,
+    req: 'hq',
+    sight: 1,
+    wall: true,
+    desc: '25 per panel. Pick a start, then an end, to plant a straight run.',
+  },
+  gate: {
+    names: ['Garden Gate', 'Hedge Arch'],
+    w: 1,
+    h: 1,
+    hp: 420,
+    cost: 75,
+    power: 0,
+    time: 0,
+    req: 'hq',
+    sight: 1,
+    wall: true,
+    gate: true,
+    desc: 'Your troops walk through it. Theirs have to break it down.',
+  },
 };
-const UP_ICON={barrows:'barrowfull_0_0',toecaps:'fork_0_0',tines:'tiller_0_0',mulch:'hq_0'};
-const BLD_ORDER=['water','bin','shed','tunnel','scare','hive','sprink','wall','gate'];
-const UNIT_ORDER=['fork','hose','barrow','tiller','cata'];
-const UP_ORDER=['barrows','toecaps','tines','mulch'];
-const DIFF={
-  gentle:{inc:.55,pinc:1.25,first:360,every:150,money:[3500,600],cap:6,waveMax:8,aiProd:1.6,label:'Gentle',extra:['fork'],defences:false,upgrades:false},
-  standard:{inc:1,pinc:1,first:210,every:100,money:[2500,1500],cap:14,waveMax:14,aiProd:1,label:'Standard',extra:['fork','fork','fork','fork'],defences:true,upgrades:true},
-  ruthless:{inc:1.4,pinc:1,first:140,every:75,money:[2500,2500],cap:20,waveMax:18,aiProd:.85,label:'Ruthless',extra:['fork','fork','fork','fork','hose','hose'],defences:true,upgrades:true}
+const UPGRADES = {
+  barrows: {
+    names: ['Bigger Barrows', 'Bigger Carts'],
+    cost: 800,
+    time: 20,
+    req: 'bin',
+    desc: 'Wheelbarrows carry 50% more compost.',
+  },
+  toecaps: {
+    names: ['Steel Toecaps', 'Iron Hats'],
+    cost: 600,
+    time: 18,
+    req: 'shed',
+    desc: 'Volunteers get 30% more health.',
+  },
+  tines: {
+    names: ['Sharper Tines', 'Sharper Blades'],
+    cost: 900,
+    time: 22,
+    req: 'tunnel',
+    desc: 'Machinery does 25% more damage.',
+  },
+  mulch: {
+    names: ['Mulch Armour', 'Lawn Armour'],
+    cost: 700,
+    time: 20,
+    req: 'hq',
+    desc: 'Buildings and fences get 30% more health.',
+  },
 };
-const TEMPLATE=[['hq',5,38],['water',9,38],['water',9,41],['bin',11,35],['shed',5,34],['tunnel',13,40],['scare',16,36],['scare',14,32]];
-const DEF_TEMPLATE=[['hive',17,39],['sprink',11,31]];
+const UP_ICON = { barrows: 'barrowfull_0_0', toecaps: 'fork_0_0', tines: 'tiller_0_0', mulch: 'hq_0' };
+const BLD_ORDER = ['water', 'bin', 'shed', 'tunnel', 'scare', 'hive', 'sprink', 'wall', 'gate'];
+const UNIT_ORDER = ['fork', 'hose', 'barrow', 'tiller', 'cata'];
+const UP_ORDER = ['barrows', 'toecaps', 'tines', 'mulch'];
+const DIFF = {
+  gentle: {
+    inc: 0.55,
+    pinc: 1.25,
+    first: 360,
+    every: 150,
+    money: [3500, 600],
+    cap: 6,
+    waveMax: 8,
+    aiProd: 1.6,
+    label: 'Gentle',
+    extra: ['fork'],
+    defences: false,
+    upgrades: false,
+  },
+  standard: {
+    inc: 1,
+    pinc: 1,
+    first: 210,
+    every: 100,
+    money: [2500, 1500],
+    cap: 14,
+    waveMax: 14,
+    aiProd: 1,
+    label: 'Standard',
+    extra: ['fork', 'fork', 'fork', 'fork'],
+    defences: true,
+    upgrades: true,
+  },
+  ruthless: {
+    inc: 1.4,
+    pinc: 1,
+    first: 140,
+    every: 75,
+    money: [2500, 2500],
+    cap: 20,
+    waveMax: 18,
+    aiProd: 0.85,
+    label: 'Ruthless',
+    extra: ['fork', 'fork', 'fork', 'fork', 'hose', 'hose'],
+    defences: true,
+    upgrades: true,
+  },
+};
+const TEMPLATE = [
+  ['hq', 5, 38],
+  ['water', 9, 38],
+  ['water', 9, 41],
+  ['bin', 11, 35],
+  ['shed', 5, 34],
+  ['tunnel', 13, 40],
+  ['scare', 16, 36],
+  ['scare', 14, 32],
+];
+const DEF_TEMPLATE = [
+  ['hive', 17, 39],
+  ['sprink', 11, 31],
+];
 
-let S=null, G=null, game=null;
-const ICONS={};
+let S = null,
+  G = null,
+  game = null;
+const ICONS = {};
 
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const idx=(x,y)=>y*MW+x, inb=(x,y)=>x>=0&&y>=0&&x<MW&&y<MH, tileOf=v=>Math.floor(v/T);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const nameOf=e=>e.d.names[e.team];
-const isWall=e=>e&&e.bld&&e.d.wall;
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const idx = (x, y) => y * MW + x,
+  inb = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH,
+  tileOf = v => Math.floor(v / T);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const nameOf = e => e.d.names[e.team];
+const isWall = e => e && e.bld && e.d.wall;
